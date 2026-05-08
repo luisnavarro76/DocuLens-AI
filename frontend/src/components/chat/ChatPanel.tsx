@@ -35,14 +35,12 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
   const prevDocId = useRef<string | null>(null);
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom whenever messages change
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   // Load history on doc change
@@ -170,7 +168,7 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
   return (
     <div className="h-full flex flex-col">
       {/* ── Chat Messages ──────────────────────────── */}
-      <ScrollArea className="flex-1 px-4" ref={scrollRef}>
+      <ScrollArea className="flex-1 px-4">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center py-20">
             <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
@@ -199,6 +197,8 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
             ))}
           </div>
         )}
+        {/* Sentinel element – scrolled into view on new messages */}
+        <div ref={bottomRef} />
       </ScrollArea>
 
       {/* ── Input Area ─────────────────────────────── */}
