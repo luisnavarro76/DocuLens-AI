@@ -28,14 +28,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(
     () => (typeof window !== "undefined" ? localStorage.getItem("token") : null)
   );
-  const [loading, setLoading] = useState(true);
+  // loading=true only when a token exists and needs server validation.
+  // If there's no token we're already done — no effect setState needed.
+  const [loading, setLoading] = useState<boolean>(
+    () => typeof window !== "undefined" && !!localStorage.getItem("token")
+  );
 
   // ── Validate saved token on mount ─────────────────
+  // NOTE: no synchronous setState here — setLoading/setUser/setToken are
+  // only called inside async callbacks (.then / .catch / .finally).
   useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    if (!token) return; // loading is already false when token is null
     api
       .get<User>("/api/v1/auth/me", { token })
       .then(setUser)
