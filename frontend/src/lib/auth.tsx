@@ -24,26 +24,31 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Lazy initializer reads localStorage once — avoids setState-in-effect lint error
+  const [token, setToken] = useState<string | null>(
+    () => (typeof window !== "undefined" ? localStorage.getItem("token") : null)
+  );
+  // loading=true only when a token exists and needs server validation.
+  // If there's no token we're already done — no effect setState needed.
+  const [loading, setLoading] = useState<boolean>(
+    () => typeof window !== "undefined" && !!localStorage.getItem("token")
+  );
 
-  // ── Load user on mount ────────────────────────────
+  // ── Validate saved token on mount ─────────────────
+  // NOTE: no synchronous setState here — setLoading/setUser/setToken are
+  // only called inside async callbacks (.then / .catch / .finally).
   useEffect(() => {
-    const saved = localStorage.getItem("token");
-    if (saved) {
-      setToken(saved);
-      api
-        .get<User>("/api/v1/auth/me", { token: saved })
-        .then(setUser)
-        .catch(() => {
-          localStorage.removeItem("token");
-          setToken(null);
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
-  }, []);
+    if (!token) return; // loading is already false when token is null
+    api
+      .get<User>("/api/v1/auth/me", { token })
+      .then(setUser)
+      .catch(() => {
+        localStorage.removeItem("token");
+        setToken(null);
+      })
+      .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentionally runs once on mount only
 
   const login = useCallback(async (email: string, password: string) => {
     const data = await api.post<{ access_token: string; user: User }>(
