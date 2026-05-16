@@ -2,9 +2,8 @@ name: DevSecOps Pipeline
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    # ⚠️  PRODUCTION ONLY — security scans run on main only
+    branches: ["main"]
 
 jobs:
   security-scans:
