@@ -24,26 +24,28 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  // Lazy initializer reads localStorage once — avoids setState-in-effect lint error
+  const [token, setToken] = useState<string | null>(
+    () => (typeof window !== "undefined" ? localStorage.getItem("token") : null)
+  );
   const [loading, setLoading] = useState(true);
 
-  // ── Load user on mount ────────────────────────────
+  // ── Validate saved token on mount ─────────────────
   useEffect(() => {
-    const saved = localStorage.getItem("token");
-    if (saved) {
-      setToken(saved);
-      api
-        .get<User>("/api/v1/auth/me", { token: saved })
-        .then(setUser)
-        .catch(() => {
-          localStorage.removeItem("token");
-          setToken(null);
-        })
-        .finally(() => setLoading(false));
-    } else {
+    if (!token) {
       setLoading(false);
+      return;
     }
-  }, []);
+    api
+      .get<User>("/api/v1/auth/me", { token })
+      .then(setUser)
+      .catch(() => {
+        localStorage.removeItem("token");
+        setToken(null);
+      })
+      .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentionally runs once on mount only
 
   const login = useCallback(async (email: string, password: string) => {
     const data = await api.post<{ access_token: string; user: User }>(

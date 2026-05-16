@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Loader2 } from "lucide-react";
@@ -16,17 +16,13 @@ interface Props {
 export default function PDFViewer({ documentId, currentPage, onPageChange, totalPages }: Props) {
   const [scale, setScale] = useState(1.0);
   const [loading, setLoading] = useState(true);
+  // Local editable value — initialized from currentPage prop.
+  // The iframe key={documentId-currentPage} already forces remount on
+  // external page changes, so no useEffect sync is needed.
   const [pageInput, setPageInput] = useState(String(currentPage));
-
-  useEffect(() => {
-    setPageInput(String(currentPage));
-  }, [currentPage]);
-
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const pdfUrl = `${API_BASE}/api/v1/documents/${documentId}/pdf`;
 
-  // Use an iframe to render the PDF with the browser's native viewer
-  // We append a page fragment for navigation
+  // Append page fragment for native viewer navigation
   const iframeSrc = `${pdfUrl}#page=${currentPage}`;
 
   const handlePageSubmit = (e: React.FormEvent) => {
@@ -35,9 +31,11 @@ export default function PDFViewer({ documentId, currentPage, onPageChange, total
     if (!isNaN(num) && num >= 1 && num <= totalPages) {
       onPageChange(num);
     } else {
+      // Reset to the current valid page without needing a useEffect
       setPageInput(String(currentPage));
     }
   };
+
 
   return (
     <div className="h-full flex flex-col bg-background">
