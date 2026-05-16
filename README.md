@@ -393,7 +393,7 @@ docker compose up --build
 | `CHUNK_OVERLAP` | ❌ | `200` | Overlap between chunks |
 | `TOP_K_RETRIEVAL` | ❌ | `10` | Candidates retrieved from vector store |
 | `TOP_K_RERANK` | ❌ | `5` | Final chunks passed to LLM after reranking |
-| `MAX_FILE_SIZE_MB` | ❌ | `50` | Maximum upload file size |
+| `MAX_UPLOAD_SIZE_MB` | ❌ | `20` | Maximum upload file size |
 
 <br/>
 
