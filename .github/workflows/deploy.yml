@@ -2,9 +2,14 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    # ⚠️  PRODUCTION ONLY — never triggered by dev or PRs
+    branches: ["main"]
+    # Ignore doc-only changes to avoid unnecessary image builds
+    paths-ignore:
+      - "**.md"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/pull_request_template.md"
+      - "CONTRIBUTING.md"
 
 env:
   REGISTRY: ghcr.io

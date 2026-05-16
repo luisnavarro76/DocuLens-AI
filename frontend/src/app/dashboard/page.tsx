@@ -46,7 +46,11 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (user) loadDocuments();
+    if (!user) return;
+    // Use IIFE so setState calls happen in async callback, not effect body directly
+    void (async () => {
+      await loadDocuments();
+    })();
   }, [user, loadDocuments]);
 
   // Poll for processing status
