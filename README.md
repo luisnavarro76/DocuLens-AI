@@ -69,8 +69,6 @@ Thanks to all the amazing people who have contributed to **PDF-Assistant-RAG**! 
 
 <br/>
 
-> 🌟 **GSSOC Contributors** — This project is open for [GirlScript Summer of Code](https://gssoc.girlscript.tech/). Check out our [CONTRIBUTING.md](CONTRIBUTING.md) to get started and browse [open issues](https://github.com/param20h/PDF-Assistant-RAG/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) tagged `good first issue`.
-
 ---
 
 <br/>
@@ -80,6 +78,65 @@ Thanks to all the amazing people who have contributed to **PDF-Assistant-RAG**! 
 **PDF-Assistant-RAG** is a complete, production-ready AI document assistant that lets users upload complex PDFs, financial reports, legal contracts, and research papers — then chat with an AI that provides **accurate, cited answers** powered by a multi-stage Retrieval-Augmented Generation pipeline.
 
 The system uses **semantic search + cross-encoder reranking** to find the most relevant document chunks, streams AI-generated answers token-by-token, and highlights exact source citations with page numbers — all inside a sleek Next.js UI with JWT-secured per-user data isolation.
+
+<br/>
+
+## 🏗️ Architecture
+
+```mermaid
+graph TD
+    subgraph Frontend["Frontend (Next.js 16)"]
+        UI["Dashboard UI (React)"]
+        Chat["Chat Panel (SSE)"]
+        Viewer["PDF Viewer (iframe)"]
+    end
+
+    subgraph Backend["Backend (FastAPI 0.115+)"]
+        API["API Router (/api/v1)"]
+        Auth["Auth (JWT/bcrypt)"]
+        DB[(SQLite Metadata)]
+
+        subgraph RAG["RAG Pipeline"]
+            Upload["Ingestion Task (Chunking)"]
+            Embed["Local Embeddings (all-MiniLM-L6-v2)"]
+            Retriever["Two-Stage Retriever"]
+            Rerank["Cross-Encoder Reranker"]
+            Agent["Agent/Generator"]
+        end
+    end
+
+    subgraph Storage["Vector Storage"]
+        Chroma[(ChromaDB)]
+    end
+
+    subgraph External["External Services"]
+        HF["HuggingFace Inference API (Qwen 72B)"]
+    end
+
+    %% Frontend to Backend Connections
+    UI <-->|REST / Auth| API
+    Chat <-->|SSE Streaming| API
+    Viewer -->|Fetch PDF| API
+
+    %% Backend Internals
+    API <--> Auth
+    API <--> DB
+    API --> Upload
+    API <--> Retriever
+    API <--> Agent
+
+    %% RAG Ingestion Flow
+    Upload --> Embed
+    Embed -->|Store Vectors| Chroma
+
+    %% RAG Query Flow
+    Retriever -->|1. Semantic Search| Chroma
+    Retriever -->|2. Score & Sort| Rerank
+    Retriever -->|Context| Agent
+
+    %% External LLM Flow
+    Agent <-->|LLM Generation| HF
+```
 
 <br/>
 
