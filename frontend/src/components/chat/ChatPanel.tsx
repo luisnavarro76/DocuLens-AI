@@ -44,7 +44,12 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
     if (!textarea) return;
 
     textarea.style.height = "auto";
-    const maxHeight = 128;
+    const computedMaxHeight = Number.parseFloat(
+      window.getComputedStyle(textarea).maxHeight
+    );
+    const maxHeight = Number.isFinite(computedMaxHeight)
+      ? computedMaxHeight
+      : textarea.scrollHeight;
     const nextHeight = Math.min(textarea.scrollHeight, maxHeight);
     textarea.style.height = `${nextHeight}px`;
     textarea.style.overflowY =
