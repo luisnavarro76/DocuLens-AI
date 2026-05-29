@@ -46,8 +46,9 @@ slowapi
 # File Validation
 #sudo apt-get install libmagic1 // for Debian/Ubuntu
 #brew install libmagic // for OSX
-python-magic-bin==0.4.27; sys_platform == "win32" # for windows
+python-magic-bin; sys_platform == "win32" # for windows
 python-magic; sys_platform != "win32"
 python-docx
 pypdf
 reportlab
+crawl4ai

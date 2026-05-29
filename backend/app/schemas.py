@@ -135,6 +135,7 @@ class ChatHistoryResponse(BaseModel):
     messages: List[ChatMessageResponse]
     document_id: Optional[str] = None
 
-
+class UploadUrl(BaseModel):
+    url: str
 # Rebuild models for forward references
 TokenResponse.model_rebuild()

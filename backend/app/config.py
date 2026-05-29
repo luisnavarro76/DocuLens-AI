@@ -33,7 +33,10 @@ class Settings(BaseSettings):
         ".docx": [
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             "application/zip",
-        ]
+        ],
+        ".txt": ["text/plain"],
+        ".md": ["text/markdown"],
+
     }
 
     # ── RAG Pipeline ─────────────────────────────────────
