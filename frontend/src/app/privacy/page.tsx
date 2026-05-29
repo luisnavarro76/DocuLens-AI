@@ -1,5 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Shield, Brain, FileText, Database, Cookie, UserCheck, Mail } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy — Document AI Analyst",
+  description:
+    "How PDF-Assistant-RAG collects, uses, and protects your data. Learn about our privacy practices for document uploads, AI processing, and account information.",
+  openGraph: {
+    title: "Privacy Policy — Document AI Analyst",
+    description:
+      "How PDF-Assistant-RAG collects, uses, and protects your data.",
+  },
+};
 
 const sections = [
   {
@@ -30,7 +42,7 @@ const sections = [
           </li>
           <li>
             <strong>Extracted content:</strong> text, embeddings, and metadata extracted from your
-            documents to enable semantic search and AI-powered问答.
+            documents to enable semantic search and AI-powered question answering.
           </li>
           <li>
             <strong>Chat history:</strong> questions you ask and the AI-generated responses, stored
@@ -295,21 +307,37 @@ const sections = [
       <>
         <p>
           If you have any questions, concerns, or requests regarding this Privacy Policy or your
-          data, please reach out to us:
+          data, please reach out through the project&rsquo;s official channels:
         </p>
         <ul>
           <li>
-            <strong>Email:</strong>{" "}
-            <a href="mailto:paramh.1120@gmail.com">paramh.1120@gmail.com</a>
-          </li>
-          <li>
-            <strong>GitHub:</strong>{" "}
+            <strong>GitHub Issues:</strong>{" "}
             <a
-              href="https://github.com/param20h/PDF-Assistant-RAG"
+              href="https://github.com/param20h/PDF-Assistant-RAG/issues"
               target="_blank"
               rel="noopener noreferrer"
             >
-              github.com/param20h/PDF-Assistant-RAG
+              github.com/param20h/PDF-Assistant-RAG/issues
+            </a>
+          </li>
+          <li>
+            <strong>GitHub Discussions:</strong>{" "}
+            <a
+              href="https://github.com/param20h/PDF-Assistant-RAG/discussions"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              github.com/param20h/PDF-Assistant-RAG/discussions
+            </a>
+          </li>
+          <li>
+            <strong>LinkedIn:</strong>{" "}
+            <a
+              href="https://www.linkedin.com/in/param20h/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              linkedin.com/in/param20h
             </a>
           </li>
         </ul>
@@ -401,8 +429,13 @@ export default function PrivacyPage() {
         <div className="mt-8 text-center">
           <p className="text-sm text-muted-foreground">
             Have questions?{" "}
-            <a href="mailto:paramh.1120@gmail.com" className="text-primary hover:underline">
-              Contact us
+            <a
+              href="https://github.com/param20h/PDF-Assistant-RAG/discussions"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              Start a discussion
             </a>
           </p>
         </div>
