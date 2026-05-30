@@ -2,7 +2,10 @@
 SQLAlchemy ORM models for users, documents, and chat messages.
 """
 import uuid
+import base64
+import hashlib
 from datetime import datetime, timezone
+from cryptography.fernet import Fernet
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text, Boolean
 from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -42,6 +45,39 @@ class GUID(TypeDecorator):
         return str(value)
 
 
+class EncryptedString(TypeDecorator):
+    """SQLAlchemy TypeDecorator that encrypts strings before storing in database,
+    and decrypts them when reading.
+    """
+    impl = Text
+    cache_ok = False
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return value
+        from app.config import get_settings
+        settings = get_settings()
+        key = base64.urlsafe_b64encode(hashlib.sha256(settings.SECRET_KEY.encode()).digest())
+        cipher = Fernet(key)
+        return cipher.encrypt(value.encode()).decode()
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return value
+        from app.config import get_settings
+        settings = get_settings()
+        key = base64.urlsafe_b64encode(hashlib.sha256(settings.SECRET_KEY.encode()).digest())
+        cipher = Fernet(key)
+        try:
+            return cipher.decrypt(value.encode()).decode()
+        except Exception:
+            return value
+
+
+def generate_uuid():
+    return str(uuid.uuid4())
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -52,7 +88,7 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     last_login = Column(DateTime, nullable=True, index=True)
-    hf_token = Column(String(255), nullable=True)
+    hf_token = Column(EncryptedString, nullable=True)
 
     # Relationships
     documents = relationship("Document", back_populates="owner", cascade="all, delete-orphan")
