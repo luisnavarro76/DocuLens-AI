@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Loader2, AlertCircle } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 import { Document, Page, pdfjs } from "react-pdf";
 
@@ -28,6 +28,11 @@ export default function PDFViewer({ documentId, currentPage, onPageChange, total
 
   const pdfUrl = `${API_BASE}/api/v1/documents/${documentId}/pdf`;
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  // Sync page input state with current page prop updates (e.g. when jumping via citations)
+  useEffect(() => {
+    setPageInput(String(currentPage));
+  }, [currentPage]);
 
   // Configure file object with Authorization headers
   const fileConfig = {
@@ -115,7 +120,7 @@ export default function PDFViewer({ documentId, currentPage, onPageChange, total
       </div>
 
       {/* ── PDF Render ──────────────────────────────── */}
-      <div className="flex-1 overflow-auto bg-muted/30 flex justify-center items-start p-4 relative">
+      <div className="flex-1 overflow-auto bg-muted/30 flex justify-center items-start p-4 relative w-full">
         <Document
           file={fileConfig}
           onLoadSuccess={() => setLoading(false)}
@@ -126,6 +131,23 @@ export default function PDFViewer({ documentId, currentPage, onPageChange, total
           loading={
             <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          }
+          error={
+            <div className="flex flex-col items-center justify-center p-8 text-center bg-card border border-destructive/20 rounded-lg max-w-md mx-auto my-12 shadow-sm gap-3">
+              <AlertCircle className="w-8 h-8 text-destructive animate-pulse" />
+              <div>
+                <p className="font-semibold text-sm text-foreground mb-1">Failed to load PDF</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  We encountered an error loading this PDF document. Please verify the document is ready or try refreshing the page.
+                </p>
+              </div>
+            </div>
+          }
+          noData={
+            <div className="flex flex-col items-center justify-center p-8 text-center bg-card border border-border rounded-lg max-w-md mx-auto my-12 shadow-sm gap-2">
+              <p className="font-semibold text-sm text-foreground">No PDF document selected</p>
+              <p className="text-xs text-muted-foreground">Select or upload a document to view it here.</p>
             </div>
           }
           className="shadow-md border border-border bg-card max-w-full"
