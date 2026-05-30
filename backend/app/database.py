@@ -44,13 +44,15 @@ def _migrate_schema():
     for non-destructive changes such as new nullable columns.
     """
     inspector = inspect(engine)
-    existing_columns = {c["name"] for c in inspector.get_columns("users")}
-
     migrations = [
         ("users", "hf_token", "ALTER TABLE users ADD COLUMN hf_token VARCHAR(255)"),
+        ("documents", "drive_file_id", "ALTER TABLE documents ADD COLUMN drive_file_id VARCHAR(255)"),
+        ("documents", "drive_folder_id", "ALTER TABLE documents ADD COLUMN drive_folder_id VARCHAR(255)"),
+        ("documents", "drive_synced_at", "ALTER TABLE documents ADD COLUMN drive_synced_at TIMESTAMP"),
     ]
 
     for table, column, ddl in migrations:
+        existing_columns = {c["name"] for c in inspector.get_columns(table)}
         if column not in existing_columns:
             try:
                 with engine.begin() as conn:

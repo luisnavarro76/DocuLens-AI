@@ -19,8 +19,8 @@ from app.models import User, Document
 from app.schemas import DocumentResponse, DocumentListResponse, DocumentStatusResponse
 from app.auth import get_current_user
 from app.config import get_settings
-from app.rag.chunker import chunk_document, get_page_count
-from app.rag.vectorstore import store_chunks, delete_document_chunks
+from app.rag.vectorstore import delete_document_chunks
+from app.services.document_ingestion import ingest_document
 from sqlalchemy import select
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -113,96 +113,7 @@ async def validate_upload(file: UploadFile):
         pass
 
 
-def _ingest_document(document_id: str, filepath: str, original_name: str, user_id: str):
-    """
-    Process a document in the background: chunk document, generate embeddings, and store in ChromaDB,
-    calls document summary function, and update the database record.
-
-    This function is intended to be run as a background task. 
-    It creates its own database session, updates the
-    document status, extracts text, splits into chunks, generates embeddings,
-    stores everything in ChromaDB, calls summary function, updates the document record with page count,
-    chunk count, and summary, and marks the document as 'ready'. 
-    On failure, it sets status to 'failed' and records the error message.
-
-    Args:
-        document_id: Unique identifier of the document in the database.
-        filepath: Absolute or relative path to the uploaded file on disk.
-        original_name: original filename provided by the user (for logging and metadata).
-        user_id: Identifier of the user who owns the document.
-    
-    Returns:
-        None
-
-    Note:
-        This function does not raise exceptions to the caller;
-        all errors are logged and the database record is updated accordingly. 
-    """
-    from app.database import SessionLocal
-
-    db = SessionLocal()
-    try:
-        doc = db.query(Document).filter(Document.id == document_id).first()
-        if not doc:
-            logger.error(f"Document {document_id} not found for ingestion")
-            return
-
-        # Update status to processing
-        doc.status = "processing"
-        db.commit()
-
-        # Get page count
-        page_count = get_page_count(filepath)
-        doc.page_count = page_count
-
-        # Chunk the document
-        chunks = chunk_document(filepath)
-
-        if not chunks:
-            doc.status = "failed"
-            doc.error_message = "No text could be extracted from the document"
-            db.commit()
-            return
-
-        # Store embeddings in ChromaDB
-        chunk_count = store_chunks(
-            chunks=chunks,
-            document_id=document_id,
-            filename=original_name,
-            user_id=user_id,
-        )
-
-        # Generate summary and update document record
-        try:
-            from app.rag.summarizer import generate_document_summary
-
-            summary = generate_document_summary(filepath, max_sentences=2)
-            if summary:
-                doc.summary = summary
-                db.commit() # Update document record with summary                
-        except Exception as e:
-            logger.warning(f"Could not import summarizer for document {document_id}: {e}")
-            doc.summary = None
-
-        # Update document record
-        doc.chunk_count = chunk_count
-        doc.status = "ready"
-        db.commit()
-
-        logger.info(f"Document {document_id} ingested: {page_count} pages, {chunk_count} chunks")
-
-    except Exception as e:
-        logger.error(f"Ingestion error for {document_id}: {e}")
-        try:
-            doc = db.query(Document).filter(Document.id == document_id).first()
-            if doc:
-                doc.status = "failed"
-                doc.error_message = str(e)[:500]
-                db.commit()
-        except Exception:
-            pass
-    finally:
-        db.close()
+_ingest_document = ingest_document
 
 
 @router.post("/upload", response_model=DocumentResponse, status_code=status.HTTP_202_ACCEPTED)
