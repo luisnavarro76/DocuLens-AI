@@ -48,6 +48,7 @@ def _migrate_schema():
 
     migrations = [
         ("users", "hf_token", "ALTER TABLE users ADD COLUMN hf_token VARCHAR(255)"),
+        ("users", "role", "ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'user'"),
     ]
 
     for table, column, ddl in migrations:
