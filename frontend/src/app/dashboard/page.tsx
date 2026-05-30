@@ -12,9 +12,19 @@ import {
 
 import Header from "@/components/layout/Header";
 import DocumentSidebar from "@/components/document/DocumentSidebar";
+import ChatSessionSidebar from "@/components/chat/ChatSessionSidebar";
 import ChatPanel from "@/components/chat/ChatPanel";
-import PDFViewer from "@/components/document/PDFViewer";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Loader2 } from "lucide-react";
+
+const PDFViewer = dynamic(() => import("@/components/document/PDFViewer"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full flex items-center justify-center bg-background/50">
+      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+    </div>
+  ),
+});
 
 export interface DocInfo {
   summary: string;
@@ -164,6 +174,9 @@ export default function DashboardPage() {
               />
             </div>
           ))}
+
+        {/* ── Left-Center: Chat Sessions Sidebar ──── */}
+        <ChatSessionSidebar />
 
         {/* ── Center: Chat Panel ─────────────────── */}
         <div className="flex-1 min-w-0 flex flex-col">

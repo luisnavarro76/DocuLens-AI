@@ -28,6 +28,7 @@ class User(Base):
     documents = relationship("Document", back_populates="owner", cascade="all, delete-orphan")
     messages = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")
     api_keys = relationship("ApiKey", back_populates="user", cascade="all, delete-orphan")
+    chat_sessions = relationship("ChatSession", back_populates="user", cascade="all, delete-orphan")
 
 
 class ApiKey(Base):
@@ -42,6 +43,19 @@ class ApiKey(Base):
 
     # Relationships
     user = relationship("User", back_populates="api_keys")
+
+
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    title = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user = relationship("User", back_populates="chat_sessions")
+    messages = relationship("ChatMessage", back_populates="session", cascade="all, delete-orphan")
 
 
 class Document(Base):
@@ -70,6 +84,7 @@ class ChatMessage(Base):
     id = Column(String, primary_key=True, default=generate_uuid)
     user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
     document_id = Column(String, ForeignKey("documents.id"), nullable=True, index=True)
+    session_id = Column(String, ForeignKey("chat_sessions.id"), nullable=True, index=True)
     role = Column(String(20), nullable=False)  # "user" | "assistant"
     content = Column(Text, nullable=False)
     sources_json = Column(Text, nullable=True)  # JSON string of source citations
@@ -78,6 +93,7 @@ class ChatMessage(Base):
     # Relationships
     user = relationship("User", back_populates="messages")
     document = relationship("Document", back_populates="messages")
+    session = relationship("ChatSession", back_populates="messages")
     shared_message = relationship("SharedMessage", back_populates="message", uselist=False, cascade="all, delete-orphan")
 
 

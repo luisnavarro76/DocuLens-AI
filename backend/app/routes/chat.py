@@ -7,7 +7,7 @@ import time
 from datetime import datetime
 from io import BytesIO
 import logging
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response, StreamingResponse
@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_user
 from app.database import get_db
 from app.metrics import record_query_response_time
-from app.models import User, ChatMessage, Document, SharedMessage
+from app.models import User, ChatMessage, Document, SharedMessage, ChatSession
 from app.rate_limit import limiter
 from app.schemas import (
     ChatRequest,
@@ -30,6 +30,8 @@ from app.schemas import (
     ShareAnswerResponse,
     ShareLinkResponse,
     SourceChunk,
+    ChatSessionCreate,
+    ChatSessionResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -80,6 +82,134 @@ def create_share_link(
         message_id=message.id,
         share_url=f"/share?message_id={message.id}",
     )
+
+
+@router.get("/sessions", response_model=List[ChatSessionResponse])
+def get_chat_sessions(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Retrieve all chat sessions for the authenticated user."""
+    sessions = (
+        db.query(ChatSession)
+        .filter(ChatSession.user_id == user.id)
+        .order_by(ChatSession.created_at.desc())
+        .all()
+    )
+    return sessions
+
+
+@router.post("/sessions", response_model=ChatSessionResponse, status_code=201)
+def create_chat_session(
+    payload: ChatSessionCreate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Create a new chat session."""
+    session = ChatSession(
+        user_id=user.id,
+        title=payload.title,
+    )
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+    return session
+
+
+@router.put("/sessions/{session_id}", response_model=ChatSessionResponse)
+def rename_chat_session(
+    session_id: str,
+    payload: ChatSessionCreate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Rename an existing chat session."""
+    session = (
+        db.query(ChatSession)
+        .filter(
+            ChatSession.id == session_id,
+            ChatSession.user_id == user.id,
+        )
+        .first()
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+    session.title = payload.title
+    db.commit()
+    db.refresh(session)
+    return session
+
+
+@router.delete("/sessions/{session_id}")
+def delete_chat_session(
+    session_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Delete a chat session and all its messages."""
+    session = (
+        db.query(ChatSession)
+        .filter(
+            ChatSession.id == session_id,
+            ChatSession.user_id == user.id,
+        )
+        .first()
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+    db.delete(session)
+    db.commit()
+    return Response(status_code=204)
+
+
+@router.get("/history/session/{session_id}", response_model=ChatHistoryResponse)
+def get_session_history(
+    session_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Retrieve chat history for a specific chat session."""
+    session = (
+        db.query(ChatSession)
+        .filter(
+            ChatSession.id == session_id,
+            ChatSession.user_id == user.id,
+        )
+        .first()
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+
+    messages = (
+        db.query(ChatMessage)
+        .filter(
+            ChatMessage.session_id == session_id,
+            ChatMessage.user_id == user.id,
+        )
+        .order_by(ChatMessage.created_at.asc())
+        .all()
+    )
+
+    formatted = []
+    for msg in messages:
+        sources = []
+        if msg.sources_json:
+            try:
+                sources = [SourceChunk(**s) for s in json.loads(msg.sources_json)]
+            except Exception:
+                pass
+
+        formatted.append(
+            ChatMessageResponse(
+                id=msg.id,
+                role=msg.role,
+                content=msg.content,
+                sources=sources,
+                created_at=msg.created_at,
+            )
+        )
+
+    return ChatHistoryResponse(messages=formatted, document_id=None)
 
 
 def generate_answer(question: str, user_id: str, document_id: Optional[str] = None):
@@ -147,6 +277,17 @@ def ask_question(
                     detail=f"Document is still {doc.status}. Please wait for processing to complete.",
                 )
 
+        # Resolve or create session
+        session_id = payload.session_id
+        if not session_id:
+            session = db.query(ChatSession).filter(ChatSession.user_id == user.id).first()
+            if not session:
+                session = ChatSession(user_id=user.id, title="Default Chat")
+                db.add(session)
+                db.commit()
+                db.refresh(session)
+            session_id = session.id
+
         result = generate_answer(
             question=payload.question,
             user_id=user.id,
@@ -154,8 +295,8 @@ def ask_question(
         )
 
         # Save to chat history
-        _save_message(db, user.id, payload.document_id, "user", payload.question)
-        _save_message(db, user.id, payload.document_id, "assistant", result["answer"], result["sources"])
+        _save_message(db, user.id, payload.document_id, "user", payload.question, session_id=session_id)
+        _save_message(db, user.id, payload.document_id, "assistant", result["answer"], result["sources"], session_id=session_id)
 
         return ChatResponse(
             answer=result["answer"],
@@ -227,8 +368,19 @@ def ask_question_stream(
 
     started_at = time.perf_counter()
 
+    # Resolve or create session
+    session_id = payload.session_id
+    if not session_id:
+        session = db.query(ChatSession).filter(ChatSession.user_id == user.id).first()
+        if not session:
+            session = ChatSession(user_id=user.id, title="Default Chat")
+            db.add(session)
+            db.commit()
+            db.refresh(session)
+        session_id = session.id
+
     # Save user message immediately
-    _save_message(db, user.id, payload.document_id, "user", payload.question)
+    _save_message(db, user.id, payload.document_id, "user", payload.question, session_id=session_id)
 
     # Stream response
     def event_stream():
@@ -258,7 +410,7 @@ def ask_question_stream(
             from app.database import SessionLocal
             save_db = SessionLocal()
             try:
-                _save_message(save_db, user.id, payload.document_id, "assistant", full_answer, sources)
+                _save_message(save_db, user.id, payload.document_id, "assistant", full_answer, sources, session_id=session_id)
             finally:
                 save_db.close()
         finally:
@@ -462,6 +614,7 @@ def _save_message(
     role: str,
     content: str,
     sources: list = None,
+    session_id: Optional[str] = None,
 ):
     """Save a chat message to the database.
 
@@ -479,6 +632,7 @@ def _save_message(
         content: The full text content of the message.
         sources: Optional list of source dictionaries (usually from RAG
             retrieval) to be stored as JSON. Defaults to `None`.
+        session_id: Optional chat session ID to group the message.
 
     Returns:
         None
@@ -488,9 +642,19 @@ def _save_message(
         leaving that responsibility to the caller. If `sources` is provided,
         it is serialized using `json.dumps()`.
     """
+    if not session_id:
+        session = db.query(ChatSession).filter(ChatSession.user_id == user_id).first()
+        if not session:
+            session = ChatSession(user_id=user_id, title="Default Chat")
+            db.add(session)
+            db.commit()
+            db.refresh(session)
+        session_id = session.id
+
     msg = ChatMessage(
         user_id=user_id,
         document_id=document_id,
+        session_id=session_id,
         role=role,
         content=content,
         sources_json=json.dumps(sources) if sources else None,
