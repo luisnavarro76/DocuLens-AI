@@ -32,6 +32,8 @@ class GUID(TypeDecorator):
             val_uuid = uuid.UUID(value)
             return val_uuid if dialect.name == 'postgresql' else str(val_uuid)
         except ValueError:
+            if dialect.name == 'postgresql':
+                return uuid.UUID(int=0)
             return value
 
     def process_result_value(self, value, dialect):
