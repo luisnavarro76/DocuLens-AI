@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Loader2, AlertCircle } from "lucide-react";
@@ -23,16 +23,18 @@ interface Props {
 
 export default function PDFViewer({ documentId, currentPage, onPageChange, totalPages }: Props) {
   const [scale, setScale] = useState(1.0);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [pageInput, setPageInput] = useState(String(currentPage));
+  const [prevCurrentPage, setPrevCurrentPage] = useState(currentPage);
+
+  // Sync page input state with current page prop updates during render phase
+  if (currentPage !== prevCurrentPage) {
+    setPrevCurrentPage(currentPage);
+    setPageInput(String(currentPage));
+  }
 
   const pdfUrl = `${API_BASE}/api/v1/documents/${documentId}/pdf`;
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
-  // Sync page input state with current page prop updates (e.g. when jumping via citations)
-  useEffect(() => {
-    setPageInput(String(currentPage));
-  }, [currentPage]);
 
   // Configure file object with Authorization headers
   const fileConfig = {
