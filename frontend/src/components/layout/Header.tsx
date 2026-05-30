@@ -25,7 +25,6 @@ import {
 } from "lucide-react";
 import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
-import ApiKeyManager from "@/components/auth/ApiKeyManager";
 
 
 interface HeaderProps {

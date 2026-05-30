@@ -37,13 +37,6 @@ export default function HuggingFaceTokenModal({ children }: HuggingFaceTokenModa
   const mountedRef = useRef(true);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Sync inputToken when existingToken changes from store (derived state fix)
-  useEffect(() => {
-    if (open) {
-      setInputToken(existingToken);
-    }
-  }, [existingToken, open]);
-
   // Cleanup auto-close timeout and unmount guard on unmount
   useEffect(() => {
     return () => {
