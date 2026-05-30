@@ -84,6 +84,9 @@ def store_chunks(
             "document_id": document_id,
             "page": chunk["page"],
             "chunk_index": chunk["chunk_index"],
+            "chunk_type": chunk.get("chunk_type", "text"),
+            **({"bbox": chunk.get("bbox", "")} if chunk.get("bbox") else {}),
+            **({"table_index": chunk.get("table_index", 0)} if chunk.get("chunk_type") == "table" else {}),
             # Indicate whether this chunk was originally an image and include a short caption
             **({"is_image": True, "image_caption": chunk.get("image_caption", "")}
                if chunk.get("is_image") else {}),
@@ -162,6 +165,8 @@ def query_chunks(
                 "filename": metadata.get("filename", ""),
                 "document_id": metadata.get("document_id", ""),
                 "page": metadata.get("page", 1),
+                "chunk_type": metadata.get("chunk_type", "text"),
+                "bbox": metadata.get("bbox", ""),
                 "score": round(similarity, 4),
             })
 
