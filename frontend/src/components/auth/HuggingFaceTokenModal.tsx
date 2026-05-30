@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, isValidElement, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,7 +17,7 @@ import { Eye, EyeOff, AlertCircle, CheckCircle2, Loader2, ExternalLink, Key } fr
 
 interface HuggingFaceTokenModalProps {
   /** Optional — if provided, allows a button-triggered dialog pattern */
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 export default function HuggingFaceTokenModal({ children }: HuggingFaceTokenModalProps) {
@@ -34,6 +34,7 @@ export default function HuggingFaceTokenModal({ children }: HuggingFaceTokenModa
   const [success, setSuccess] = useState(false);
   const [showToken, setShowToken] = useState(false);
 
+  const mountedRef = useRef(true);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync inputToken when existingToken changes from store (derived state fix)
@@ -43,9 +44,10 @@ export default function HuggingFaceTokenModal({ children }: HuggingFaceTokenModa
     }
   }, [existingToken, open]);
 
-  // Cleanup auto-close timeout on unmount
+  // Cleanup auto-close timeout and unmount guard on unmount
   useEffect(() => {
     return () => {
+      mountedRef.current = false;
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
@@ -75,6 +77,7 @@ export default function HuggingFaceTokenModal({ children }: HuggingFaceTokenModa
   };
 
   const handleSave = async () => {
+    if (saving) return;
     const token = inputToken.trim();
     if (!token) {
       setError("Please enter a valid token");
@@ -87,11 +90,13 @@ export default function HuggingFaceTokenModal({ children }: HuggingFaceTokenModa
 
     try {
       await setHfToken(token);
+      if (!mountedRef.current) return;
       setSaving(false);
       setSuccess(true);
       // Auto-close after 1.5s
       timeoutRef.current = setTimeout(() => setOpen(false), 1500);
     } catch (err) {
+      if (!mountedRef.current) return;
       setSaving(false);
       setError(err instanceof Error ? err.message : "Failed to save token");
     }
@@ -102,7 +107,7 @@ export default function HuggingFaceTokenModal({ children }: HuggingFaceTokenModa
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {children ? (
-        <DialogTrigger render={React.isValidElement(children) ? children : <span>{children}</span>} />
+        <DialogTrigger render={isValidElement(children) ? children : <span>{children}</span>} />
       ) : (
         <DialogTrigger
           render={
@@ -147,6 +152,7 @@ export default function HuggingFaceTokenModal({ children }: HuggingFaceTokenModa
               onChange={(e) => {
                 setInputToken(e.target.value);
                 if (error) setError(null);
+                if (success) setSuccess(false);
               }}
               placeholder="hf_..."
               className="pr-10 font-mono"
