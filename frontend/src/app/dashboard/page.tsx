@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { Loader2 } from "lucide-react";
 import {
   api,
   CONNECTION_ERROR_BANNER_MESSAGE,
@@ -13,8 +14,16 @@ import {
 import Header from "@/components/layout/Header";
 import DocumentSidebar from "@/components/document/DocumentSidebar";
 import ChatPanel from "@/components/chat/ChatPanel";
-import PDFViewer from "@/components/document/PDFViewer";
 import { Skeleton } from "@/components/ui/skeleton";
+
+const PDFViewer = dynamic(() => import("@/components/document/PDFViewer"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full flex items-center justify-center bg-background/50">
+      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+    </div>
+  ),
+});
 
 export interface DocInfo {
   summary: string;
