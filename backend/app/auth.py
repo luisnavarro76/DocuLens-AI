@@ -30,10 +30,10 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 # ── JWT Token ────────────────────────────────────────
 
-def create_access_token(user_id: str) -> str:
+def create_access_token(user_id) -> str:
     """Create a JWT access token with user_id as the subject."""
     payload = {
-        "sub": user_id,
+        "sub": str(user_id),
         "type": "access",
         "exp": datetime.now(timezone.utc) + timedelta(minutes=settings.JWT_ACCESS_EXPIRY_MINUTES),
         "iat": datetime.now(timezone.utc),
@@ -41,10 +41,10 @@ def create_access_token(user_id: str) -> str:
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 
-def create_refresh_token(user_id: str) -> str:
+def create_refresh_token(user_id) -> str:
     """Create a JWT refresh token with user_id as the subject."""
     payload = {
-        "sub": user_id,
+        "sub": str(user_id),
         "type": "refresh",
         "exp": datetime.now(timezone.utc) + timedelta(days=settings.JWT_REFRESH_EXPIRY_DAYS),
         "iat": datetime.now(timezone.utc),
