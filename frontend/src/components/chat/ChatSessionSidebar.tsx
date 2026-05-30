@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Check, X, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Edit2, Trash2, MessageSquare, ChevronLeft } from "lucide-react";
 import { useChatStore, type ChatSession } from "@/store/chat-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,7 +100,7 @@ export default function ChatSessionSidebar() {
         <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin">
           {sessions.length === 0 ? (
             <div className="text-center py-8 px-4">
-              <p className="text-xs text-muted-foreground">No chat sessions. Click "+" to start a new chat.</p>
+              <p className="text-xs text-muted-foreground">No chat sessions. Click &quot;+&quot; to start a new chat.</p>
             </div>
           ) : (
             sessions.map((session) => {
