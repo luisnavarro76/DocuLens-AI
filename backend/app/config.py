@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     JWT_ACCESS_EXPIRY_MINUTES: int = 15
     JWT_REFRESH_EXPIRY_DAYS: int = 7
     GOOGLE_CLIENT_ID: str = ""
+    HF_CLIENT_ID: str = ""
+    HF_CLIENT_SECRET: str = ""
+    HF_REDIRECT_URI: str = ""
+    FRONTEND_URL: str = "http://localhost:3000"
 
     # ── File Upload ──────────────────────────────────────
     UPLOAD_DIR: str = "./data/uploads"
