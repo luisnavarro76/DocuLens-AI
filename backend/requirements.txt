@@ -25,6 +25,7 @@ httpx
 
 # Document Processing
 PyMuPDF
+pdfplumber
 python-docx
 
 # LangChain & RAG
