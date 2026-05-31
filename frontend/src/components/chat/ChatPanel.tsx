@@ -22,11 +22,13 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
   const input = useChatStore((state) => state.input);
   const streaming = useChatStore((state) => state.streaming);
   const isTyping = useChatStore((state) => state.isTyping);
+  const activeSessionId = useChatStore((state) => state.activeSessionId);
   const setMessages = useChatStore((state) => state.setMessages);
   const setInput = useChatStore((state) => state.setInput);
   const setStreaming = useChatStore((state) => state.setStreaming);
   const setIsTyping = useChatStore((state) => state.setIsTyping);
   const resetChat = useChatStore((state) => state.resetChat);
+  const fetchSessionHistory = useChatStore((state) => state.fetchSessionHistory);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -61,8 +63,13 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
     };
   }, [resetChat]);
 
-  // Load history on doc change
+  // Load history on activeSessionId or fallback to activeDoc change
   useEffect(() => {
+    if (activeSessionId) {
+      fetchSessionHistory(activeSessionId);
+      return;
+    }
+
     if (!activeDoc) {
       prevDocId.current = null;
       setMessages([]);
@@ -100,7 +107,7 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [activeDoc, resetChat, setMessages]);
+  }, [activeSessionId, activeDoc, fetchSessionHistory, setMessages]);
 
   const handleSend = async () => {
     if (!input.trim() || streaming) return;
@@ -128,6 +135,7 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
       const stream = api.streamPost("/api/v1/chat/ask/stream", {
         question,
         document_id: activeDoc?.id || null,
+        session_id: activeSessionId,
       });
 
       for await (const event of stream) {
