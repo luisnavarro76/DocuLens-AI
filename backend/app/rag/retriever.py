@@ -1,5 +1,5 @@
 """
-Two-stage retrieval: ChromaDB similarity search + cross-encoder reranking.
+Two-stage retrieval: Hybrid Ensemble (ChromaDB + BM25) + cross-encoder reranking.
 """
 import logging
 from typing import List, Dict, Any, Optional
@@ -7,6 +7,12 @@ from app.config import get_settings
 from app.rag.embeddings import embed_query
 from app.rag.tracing import trace_function
 from app.rag.vectorstore import query_chunks
+
+from langchain.retrievers import EnsembleRetriever
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.documents import Document as LangchainDocument
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -32,6 +38,42 @@ def get_reranker():
     return _reranker if _reranker != "disabled" else None
 
 
+class CustomVectorRetriever(BaseRetriever):
+    user_id: str = Field(description="User ID")
+    document_id: Optional[str] = Field(default=None, description="Document ID")
+    top_k: int = Field(default=10, description="Top K results")
+
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[LangchainDocument]:
+        query_vector = embed_query(query)
+        candidates = query_chunks(
+            query_embedding=query_vector,
+            user_id=self.user_id,
+            document_id=self.document_id,
+            top_k=self.top_k,
+        )
+        return [LangchainDocument(page_content=c["text"], metadata=c) for c in candidates]
+
+
+class CustomBM25Retriever(BaseRetriever):
+    user_id: str = Field(description="User ID")
+    document_id: Optional[str] = Field(default=None, description="Document ID")
+    top_k: int = Field(default=10, description="Top K results")
+
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[LangchainDocument]:
+        from app.rag.bm25 import query_bm25
+        candidates = query_bm25(
+            query=query,
+            user_id=self.user_id,
+            document_id=self.document_id,
+            top_k=self.top_k,
+        )
+        return [LangchainDocument(page_content=c["text"], metadata=c) for c in candidates]
+
+
 @trace_function(
     "retrieve",
     metadata_factory=lambda query, user_id, document_id=None: {
@@ -50,19 +92,38 @@ def retrieve(
 ) -> List[Dict[str, Any]]:
     """
     Two-stage retrieval pipeline:
-    1. ChromaDB similarity search (top-K broad)
+    1. Hybrid Search (Vector + BM25 via EnsembleRetriever with RRF)
     2. Cross-encoder reranking (top-K refined)
 
     Returns chunks with confidence scores.
     """
-    # ── Stage 1: Embedding search ────────────────────
-    query_vector = embed_query(query)
-    candidates = query_chunks(
-        query_embedding=query_vector,
+    # ── Stage 1: Hybrid Search ───────────────────────
+    vector_retriever = CustomVectorRetriever(
         user_id=user_id,
         document_id=document_id,
         top_k=settings.TOP_K_RETRIEVAL,
     )
+    
+    bm25_retriever = CustomBM25Retriever(
+        user_id=user_id,
+        document_id=document_id,
+        top_k=settings.TOP_K_RETRIEVAL,
+    )
+    
+    ensemble_retriever = EnsembleRetriever(
+        retrievers=[vector_retriever, bm25_retriever],
+        weights=[0.6, 0.4]
+    )
+    
+    docs = ensemble_retriever.invoke(query)
+    
+    candidates = []
+    for i, doc in enumerate(docs):
+        chunk = doc.metadata.copy()
+        # EnsembleRetriever doesn't expose the raw RRF score directly on the document,
+        # but we preserve a mock score based on rank for fallback if reranker fails
+        chunk["score"] = 1.0 / (i + 1)
+        candidates.append(chunk)
 
     if not candidates:
         return []
@@ -84,7 +145,7 @@ def retrieve(
             candidates.sort(key=lambda x: x.get("rerank_score", 0), reverse=True)
 
         except Exception as e:
-            logger.warning(f"Reranking failed, using embedding scores: {e}")
+            logger.warning(f"Reranking failed, using hybrid scores: {e}")
 
     # ── Take top-K after reranking ───────────────────
     top_chunks = candidates[:settings.TOP_K_RERANK]
