@@ -153,7 +153,7 @@ jobs:
           echo "Total Points Calculated: $POINTS"
           
           if [ "$POINTS" -gt 0 ]; then
-            printf -v COMMENT "🎉 **Congratulations on getting your Pull Request merged!** 🎉\n\nThank you for contributing to PDF-Assistant-RAG as part of GSSoC '24! 🚀\n\nKeep up the great work! ✨"
+            printf -v COMMENT "🎉 **Congratulations on getting your Pull Request merged!** 🎉\n\nThank you for contributing to PDF-Assistant-RAG as part of GSSoC '26! 🚀\n\nKeep up the great work! ✨"
             
             # Post the comment to the PR
             echo "Posting comment..."
