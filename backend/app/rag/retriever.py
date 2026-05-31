@@ -6,7 +6,8 @@ import logging
 import re
 from typing import List, Dict, Any, Optional
 
-from langchain.retrievers import EnsembleRetriever
+# In LangChain 1.3.2+, EnsembleRetriever moved to langchain_classic (imported by langchain_community)
+from langchain_classic.retrievers import EnsembleRetriever
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.documents import Document as LangchainDocument
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
