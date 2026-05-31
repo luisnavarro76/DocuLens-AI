@@ -42,6 +42,22 @@ class Settings(BaseSettings):
     TOP_K_RETRIEVAL: int = 10
     TOP_K_RERANK: int = 5
 
+    # ── Knowledge Graph (GraphRAG) ───────────────────────
+    GRAPH_PERSIST_DIR: str = "./data/graphs"
+    GRAPH_ENTITY_LABELS: set = {
+        "PERSON",
+        "ORG",
+        "GPE",
+        "LOC",
+        "PRODUCT",
+        "EVENT",
+        "WORK_OF_ART",
+        "LAW",
+        "NORP",
+        "FAC",
+    }
+    GRAPH_MAX_RELATIONSHIPS: int = 12
+
     # ── Embeddings (local HuggingFace model) ─────────────
     EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
     EMBEDDING_DIMENSION: int = 384

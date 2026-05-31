@@ -164,6 +164,15 @@ def _ingest_document(document_id: str, filepath: str, original_name: str, user_i
             db.commit()
             return
 
+        # Build and persist a lightweight entity co-occurrence graph for GraphRAG.
+        try:
+            from app.rag.graph_builder import build_graph, save_graph
+
+            graph = build_graph(chunks)
+            save_graph(graph, user_id=user_id, document_id=document_id)
+        except Exception as e:
+            logger.warning(f"Could not build knowledge graph for document {document_id}: {e}")
+
         # Store embeddings in ChromaDB
         chunk_count = store_chunks(
             chunks=chunks,
@@ -496,6 +505,14 @@ def delete_document(
         delete_document_chunks(document_id=document_id, user_id=user.id)
     except Exception as e:
         logger.warning(f"Error deleting vectors: {e}")
+
+    # Delete persisted knowledge graph
+    try:
+        from app.rag.graph_builder import delete_graph
+
+        delete_graph(user_id=user.id, document_id=document_id)
+    except Exception as e:
+        logger.warning(f"Error deleting knowledge graph: {e}")
 
     # Delete from database (cascades to chat messages)
     db.delete(doc)
