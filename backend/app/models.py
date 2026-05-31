@@ -77,6 +77,21 @@ class ApiKey(Base):
     user = relationship("User", back_populates="api_keys")
 
 
+class WorkspaceInvitation(Base):
+    __tablename__ = "workspace_invitations"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    email = Column(String(120), nullable=False, index=True)
+    token_hash = Column(String(255), nullable=False, unique=True, index=True)
+    inviter_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    workspace_name = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    expires_at = Column(DateTime, nullable=False)
+    accepted_at = Column(DateTime, nullable=True)
+
+    inviter = relationship("User")
+
+
 class Document(Base):
     __tablename__ = "documents"
 
