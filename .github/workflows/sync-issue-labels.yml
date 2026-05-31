@@ -114,3 +114,56 @@ jobs:
           else
             echo "Done. Added $MISSING label(s) to PR #$PR_NUMBER."
           fi
+
+      - name: Calculate GSSoC Points and Comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          echo "Calculating GSSoC points for PR #$PR_NUMBER..."
+          
+          # Fetch all labels currently on the PR (including the ones we just synced)
+          PR_LABELS=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json labels --jq '.labels[].name' 2>/dev/null || true)
+          
+          POINTS=0
+          
+          while IFS= read -r LABEL; do
+            [ -z "$LABEL" ] && continue
+            case "$LABEL" in
+              "level:beginner") POINTS=$((POINTS + 20)) ;;
+              "level:intermediate") POINTS=$((POINTS + 35)) ;;
+              "level:advanced") POINTS=$((POINTS + 55)) ;;
+              "level:critical") POINTS=$((POINTS + 80)) ;;
+              "type:accessibility") POINTS=$((POINTS + 15)) ;;
+              "type:bug") POINTS=$((POINTS + 10)) ;;
+              "type:design") POINTS=$((POINTS + 10)) ;;
+              "type:devops") POINTS=$((POINTS + 15)) ;;
+              "type:docs") POINTS=$((POINTS + 5)) ;;
+              "type:feature") POINTS=$((POINTS + 10)) ;;
+              "type:performance") POINTS=$((POINTS + 15)) ;;
+              "type:refactor") POINTS=$((POINTS + 10)) ;;
+              "type:security") POINTS=$((POINTS + 20)) ;;
+              "type:testing") POINTS=$((POINTS + 10)) ;;
+            esac
+          done <<< "$PR_LABELS"
+          
+          echo "Total Points Calculated: $POINTS"
+          
+          if [ "$POINTS" -gt 0 ]; then
+            COMMENT="🎉 **Congratulations on getting your Pull Request merged!** 🎉
+
+Thank you for contributing to PDF-Assistant-RAG as part of GSSoC '24! 🚀
+Based on the difficulty and types of the issues resolved, you have been awarded **$POINTS points**.
+
+Keep up the great work! ✨"
+            
+            # Post the comment to the PR
+            echo "Posting comment..."
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$COMMENT"
+          else
+            echo "No scorable labels found. No comment posted."
+          fi
+
