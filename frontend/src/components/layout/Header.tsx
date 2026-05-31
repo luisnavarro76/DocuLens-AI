@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -21,13 +20,12 @@ import {
   PanelRightOpen,
   LogOut,
   Moon,
-  Shield,
   Sun,
   Menu,
   X,
 } from "lucide-react";
 import { Briefcase, ChevronDown } from "lucide-react";
-import { useWorkspaceStore, WORKSPACES } from "@/store/workspace-store";
+import { useWorkspaceStore, WORKSPACES, type WorkspaceId } from "@/store/workspace-store";
 import { api } from "@/lib/api";
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
@@ -53,14 +51,12 @@ export default function Header({
   mobileSheetContent,
 }: HeaderProps) {
   const { user, logout } = useAuth();
-  const { t, i18n } = useTranslation();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [sheetOpen, setSheetOpen] = useState(false);
   const workspace = useWorkspaceStore((s) => s.workspace);
   const setWorkspace = useWorkspaceStore((s) => s.setWorkspace);
-  const [wsLoading, setWsLoading] = useState(false);
 
   const isDark = theme === "dark";
   const toggleTheme = () => setTheme(isDark ? "light" : "dark");
@@ -70,22 +66,8 @@ export default function Header({
     router.replace("/login");
   };
 
-  const languageLabel = (language: string) => {
-    switch (language) {
-      case "hi":
-        return t("common.hindi");
-      case "es":
-        return t("common.spanish");
-      case "fr":
-        return t("common.french");
-      default:
-        return t("common.english");
-    }
-  };
-
   const fetchDocumentsForWorkspace = async (id: string) => {
     // Placeholder: simulate fetching documents for the selected workspace
-    setWsLoading(true);
     try {
       // Attempt a real API call if available; otherwise this will fail silently
       const res = await api.get(`/api/v1/documents?workspace=${encodeURIComponent(id)}`).catch(() => null);
@@ -94,8 +76,6 @@ export default function Header({
       // e.g. documentStore.setDocuments(res || [])
     } catch (err) {
       console.warn("Failed to fetch documents for workspace", id, err);
-    } finally {
-      setWsLoading(false);
     }
   };
 
@@ -181,7 +161,7 @@ export default function Header({
                   key={w.id}
                   className={`cursor-pointer ${w.id === workspace ? "font-medium" : ""}`}
                   onClick={async () => {
-                    setWorkspace(w.id as any);
+                    setWorkspace(w.id as WorkspaceId);
                     await fetchDocumentsForWorkspace(w.id);
                   }}
                 >
