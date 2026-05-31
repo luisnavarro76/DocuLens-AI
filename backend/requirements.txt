@@ -29,6 +29,7 @@ python-docx
 
 # LangChain & RAG
 langchain
+langchain-classic
 langchain-community
 langchain-huggingface
 langchain-text-splitters
