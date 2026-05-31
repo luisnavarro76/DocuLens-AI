@@ -14,7 +14,7 @@ name: Sync Labels — Issue to PR
 
 on:
   pull_request_target:
-    types: [opened, reopened, synchronize, edited, ready_for_review]
+    types: [closed]
     branches: ["dev"]
 
 permissions:
@@ -26,6 +26,7 @@ jobs:
   sync-labels:
     name: Sync labels from referenced issue
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
 
     steps:
       - name: Extract issue numbers from PR body
