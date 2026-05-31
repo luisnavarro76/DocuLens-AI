@@ -40,15 +40,16 @@ jobs:
           #   "Resolves #111, #222, #333"
           #
           # Approach: grab lines containing a keyword, then
-          # extract every #NNN from those lines.
+          # extract every NNN from those lines.
+          # We place '|| true' at the very end of the pipeline so it doesn't short-circuit.
           ISSUES=$(
             echo "${PR_BODY:-}" \
-              | grep -ioP '(Closes|Fixes|Resolves).*' 2>/dev/null || true \
-              | grep -oP '#\d+' 2>/dev/null || true \
-              | grep -oP '\d+' 2>/dev/null || true \
-              | sort -un 2>/dev/null || true \
-              | tr '\n' ' ' 2>/dev/null || true \
-              | xargs
+              | grep -ioE '.*(closes|fixes|resolves).*' \
+              | grep -oE '#[0-9]+' \
+              | grep -oE '[0-9]+' \
+              | sort -un \
+              | xargs \
+            || true
           )
           echo "Found issues: [$ISSUES]"
           echo "issues=$ISSUES" >> "$GITHUB_OUTPUT"
