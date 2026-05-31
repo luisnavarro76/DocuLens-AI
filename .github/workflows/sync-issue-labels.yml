@@ -1,0 +1,115 @@
+name: Sync Labels — Issue to PR
+
+# ──────────────────────────────────────────────────────────
+# Auto-syncs labels from referenced issue(s) to the PR when
+# a PR is opened or updated targeting `dev`.
+#
+# Why pull_request_target:
+#   Label operations need write permissions on the target
+#   repo. pull_request_target runs in the context of the
+#   base repo with access to secrets and write token.
+#   Since we only read issue data and apply labels, there
+#   is no security concern.
+# ──────────────────────────────────────────────────────────
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+    branches: ["dev"]
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: write
+
+jobs:
+  sync-labels:
+    name: Sync labels from referenced issue
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Extract issue numbers from PR body
+        id: extract
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          # Match patterns:
+          #   "Closes #123"
+          #   "Fixes #456, #789"  (comma-separated)
+          #   "Resolves #111, #222, #333"
+          #
+          # Approach: grab lines containing a keyword, then
+          # extract every #NNN from those lines.
+          ISSUES=$(
+            echo "${PR_BODY:-}" \
+              | grep -ioP '(Closes|Fixes|Resolves).*' 2>/dev/null || true \
+              | grep -oP '#\d+' 2>/dev/null || true \
+              | grep -oP '\d+' 2>/dev/null || true \
+              | sort -un 2>/dev/null || true \
+              | tr '\n' ' ' 2>/dev/null || true \
+              | xargs
+          )
+          echo "Found issues: [$ISSUES]"
+          echo "issues=$ISSUES" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch and apply labels
+        if: steps.extract.outputs.issues != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUES: ${{ steps.extract.outputs.issues }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          ALL_LABELS=""
+
+          for ISSUE in $ISSUES; do
+            echo "--- Fetching labels for #$ISSUE ---"
+
+            LABELS=$(gh issue view "$ISSUE" --repo "$REPO" --json labels --jq '.labels[].name' 2>/dev/null || true)
+
+            if [ -z "$LABELS" ]; then
+              echo "  → No labels on #$ISSUE, skipping"
+              continue
+            fi
+
+            echo "  → Labels: $(echo "$LABELS" | tr '\n' ' ')"
+
+            # Accumulate labels (newline-separated, deduplicated later)
+            ALL_LABELS="${ALL_LABELS}${LABELS}"$'\n'
+          done
+
+          if [ -z "$ALL_LABELS" ]; then
+            echo "No labels found across all referenced issues. Exiting."
+            exit 0
+          fi
+
+          # Deduplicate and remove empty lines
+          UNIQUE_LABELS=$(echo "$ALL_LABELS" | sort -u | grep -v '^$')
+
+          echo ""
+          echo "=== Applying labels to PR #$PR_NUMBER ==="
+          echo "$UNIQUE_LABELS"
+
+          # Get labels already on the PR
+          EXISTING=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json labels --jq '.labels[].name' 2>/dev/null || true)
+
+          MISSING=0
+          while IFS= read -r LABEL; do
+            [ -z "$LABEL" ] && continue
+            if echo "$EXISTING" | grep -qxF "$LABEL"; then
+              echo "  ✓ Already present: $LABEL"
+            else
+              echo "  + Adding: $LABEL"
+              gh label create "$LABEL" --repo "$REPO" 2>/dev/null || true  # create if not exists
+              gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "$LABEL"
+              MISSING=$((MISSING + 1))
+            fi
+          done <<< "$UNIQUE_LABELS"
+
+          if [ "$MISSING" -eq 0 ]; then
+            echo "All labels already synced — nothing to add."
+          else
+            echo "Done. Added $MISSING label(s) to PR #$PR_NUMBER."
+          fi
