@@ -8,11 +8,46 @@ import hashlib
 from datetime import datetime, timezone
 
 from cryptography.fernet import Fernet
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text, Boolean
+from sqlalchemy.types import TypeDecorator, CHAR
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text, Boolean, Enum as SQLAlchemyEnum
 from sqlalchemy.types import TypeDecorator
 from sqlalchemy.orm import relationship
 
 from app.database import Base
+
+
+class GUID(TypeDecorator):
+    """Platform-independent GUID type.
+    Uses PostgreSQL's UUID type, otherwise uses CHAR(36).
+    """
+    impl = CHAR
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(PG_UUID(as_uuid=True))
+        else:
+            return dialect.type_descriptor(CHAR(36))
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return value
+        if isinstance(value, uuid.UUID):
+            return value if dialect.name == 'postgresql' else str(value)
+        try:
+            val_uuid = uuid.UUID(value)
+            return val_uuid if dialect.name == 'postgresql' else str(val_uuid)
+        except ValueError:
+            if dialect.name == 'postgresql':
+                return uuid.UUID(int=0)
+            return value
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return value
+        return str(value)
 
 
 class EncryptedString(TypeDecorator):
@@ -72,7 +107,7 @@ class User(Base):
     """
     __tablename__ = "users"
 
-    id = Column(String, primary_key=True, default=generate_uuid)
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
     username = Column(String(80), unique=True, nullable=False, index=True)
     email = Column(String(120), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
@@ -102,8 +137,8 @@ class ApiKey(Base):
     """
     __tablename__ = "api_keys"
 
-    id = Column(String, primary_key=True, default=generate_uuid)
-    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID, ForeignKey("users.id"), nullable=False, index=True)
     key_prefix = Column(String(10), nullable=False)
     hashed_key = Column(String(255), nullable=False, unique=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
@@ -119,6 +154,11 @@ class Document(Base):
     """
     __tablename__ = "documents"
 
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID, ForeignKey("users.id"), nullable=False, index=True)
+    filename = Column(String(255), nullable=False)        # Stored filename (UUID-based)
+    original_name = Column(String(255), nullable=False)    # User's original filename
+    file_size = Column(Integer, default=0)                 # Size in bytes
     id = Column(String, primary_key=True, default=generate_uuid)
     user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
     filename = Column(String(255), nullable=False)         # Internal UUID-based filename
@@ -142,9 +182,9 @@ class ChatMessage(Base):
     """
     __tablename__ = "chat_messages"
 
-    id = Column(String, primary_key=True, default=generate_uuid)
-    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
-    document_id = Column(String, ForeignKey("documents.id"), nullable=True, index=True)
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID, ForeignKey("users.id"), nullable=False, index=True)
+    document_id = Column(GUID, ForeignKey("documents.id"), nullable=True, index=True)
     role = Column(String(20), nullable=False)  # "user" | "assistant"
     content = Column(Text, nullable=False)
     sources_json = Column(Text, nullable=True)  # JSON representation of retrieved sources
@@ -162,8 +202,8 @@ class SharedMessage(Base):
     """
     __tablename__ = "shared_messages"
 
-    id = Column(String, primary_key=True, default=generate_uuid)
-    message_id = Column(String, ForeignKey("chat_messages.id"), nullable=False, unique=True, index=True)
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    message_id = Column(GUID, ForeignKey("chat_messages.id"), nullable=False, unique=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
