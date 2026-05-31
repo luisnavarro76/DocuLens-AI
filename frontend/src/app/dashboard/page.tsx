@@ -7,8 +7,8 @@ import { useAuth } from "@/lib/auth";
 import { api, CONNECTION_ERROR_BANNER_MESSAGE, CONNECTION_ERROR_MESSAGE } from "@/lib/api";
 import Header from "@/components/layout/Header";
 import DocumentSidebar from "@/components/document/DocumentSidebar";
+import ChatSessionSidebar from "@/components/chat/ChatSessionSidebar";
 import ChatPanel from "@/components/chat/ChatPanel";
-
 function PDFViewerSkeleton() {
   return (
     <div
@@ -163,6 +163,9 @@ export default function DashboardPage() {
             {sidebarContent}
           </div>
         )}
+
+        {/* ── Left-Center: Chat Sessions Sidebar ──── */}
+        <ChatSessionSidebar />
 
         {/* ── Center: Chat Panel ──────────────────────────────────── */}
         <div className="flex-1 min-w-0 flex flex-col">

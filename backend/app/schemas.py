@@ -146,6 +146,7 @@ class AdminStatsResponse(BaseModel):
 class ChatRequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=2000)
     document_id: Optional[str] = None
+    session_id: Optional[str] = None
 
 
 class SourceChunk(BaseModel):
@@ -190,6 +191,21 @@ class ShareAnswerResponse(BaseModel):
 class ShareLinkResponse(BaseModel):
     message_id: str
     share_url: str
+
+
+# ── Chat Session ──────────────────────────────────────
+
+class ChatSessionCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+
+
+class ChatSessionResponse(BaseModel):
+    id: str
+    title: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 # Rebuild models for forward references
