@@ -7,8 +7,8 @@ export interface SourceChunk {
   text: string;
   filename: string;
   page: number;
-  score: number;
-  confidence: number;
+  score?: number;
+  confidence?: number;
 }
 
 export interface ChatMsg {
