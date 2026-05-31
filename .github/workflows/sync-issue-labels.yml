@@ -53,7 +53,6 @@ jobs:
           echo "issues=$ISSUES" >> "$GITHUB_OUTPUT"
 
       - name: Fetch and apply labels
-        if: steps.extract.outputs.issues != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUES: ${{ steps.extract.outputs.issues }}
@@ -62,7 +61,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          ALL_LABELS=""
+          ALL_LABELS="gssoc"$'\n'"gssoc:approved"$'\n'"mentor:param20h"$'\n'
 
           for ISSUE in $ISSUES; do
             echo "--- Fetching labels for #$ISSUE ---"
@@ -81,7 +80,7 @@ jobs:
           done
 
           if [ -z "$ALL_LABELS" ]; then
-            echo "No labels found across all referenced issues. Exiting."
+            echo "No labels to apply. Exiting."
             exit 0
           fi
 
