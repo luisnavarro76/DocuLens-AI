@@ -82,16 +82,16 @@ def create_share_link(
     )
 
 
-def generate_answer(question: str, user_id: str, document_id: Optional[str] = None):
+def generate_answer(question: str, user_id: str, document_id: Optional[str] = None, hf_token: Optional[str] = None):
     from app.rag.agent import generate_answer as _generate_answer
 
-    return _generate_answer(question=question, user_id=user_id, document_id=document_id)
+    return _generate_answer(question=question, user_id=user_id, document_id=document_id, hf_token=hf_token)
 
 
-def generate_answer_stream(question: str, user_id: str, document_id: Optional[str] = None):
+def generate_answer_stream(question: str, user_id: str, document_id: Optional[str] = None, hf_token: Optional[str] = None):
     from app.rag.agent import generate_answer_stream as _generate_answer_stream
 
-    return _generate_answer_stream(question=question, user_id=user_id, document_id=document_id)
+    return _generate_answer_stream(question=question, user_id=user_id, document_id=document_id, hf_token=hf_token)
 
 
 @router.post("/ask", response_model=ChatResponse)
@@ -151,6 +151,7 @@ def ask_question(
             question=payload.question,
             user_id=user.id,
             document_id=payload.document_id,
+            hf_token=user.hf_token,
         )
 
         # Save to chat history
@@ -240,6 +241,7 @@ def ask_question_stream(
                 question=payload.question,
                 user_id=user.id,
                 document_id=payload.document_id,
+                hf_token=user.hf_token,
             ):
                 yield chunk
 
