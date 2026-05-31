@@ -9,27 +9,18 @@ from typing import List, Dict, Any, Optional, Generator
 from huggingface_hub import InferenceClient
 from app.config import get_settings
 from app.rag.retriever import retrieve
+from app.rag.graph_retriever import get_entity_context
 from app.rag.prompts import SYSTEM_PROMPT, RAG_PROMPT_TEMPLATE, GREETING_PROMPT
 from app.rag.tracing import trace_function
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-# ── Singleton LLM client ─────────────────────────────
-_llm_client = None
-
-
-def get_llm_client() -> InferenceClient:
-    """Get or create HuggingFace InferenceClient (singleton)."""
-    global _llm_client
-
-    if _llm_client is None:
-        _llm_client = InferenceClient(
-            token=settings.HF_TOKEN,
-        )
-        logger.info(f"LLM client initialized for model: {settings.LLM_MODEL}")
-
-    return _llm_client
+def get_llm_client(hf_token: Optional[str] = None) -> InferenceClient:
+    """Create a HuggingFace InferenceClient per-request."""
+    return InferenceClient(
+        token=hf_token or settings.HF_TOKEN,
+    )
 
 
 def is_greeting(question: str) -> bool:
@@ -58,6 +49,26 @@ def build_context(chunks: List[Dict[str, Any]]) -> str:
     return "\n\n---\n\n".join(context_parts)
 
 
+def build_augmented_context(
+    chunks: List[Dict[str, Any]],
+    question: str,
+    user_id: str,
+    document_id: Optional[str] = None,
+) -> str:
+    """Combine vector-retrieved excerpts with GraphRAG relationships."""
+    context = build_context(chunks)
+    graph_context = get_entity_context(
+        query=question,
+        user_id=user_id,
+        document_id=document_id,
+    )
+
+    if not graph_context:
+        return context
+
+    return f"{context}\n\n---\n\n{graph_context}"
+
+
 def _chat_messages(system: str, user_content: str) -> list:
     """Build messages list for chat completion API."""
     return [
@@ -68,7 +79,7 @@ def _chat_messages(system: str, user_content: str) -> list:
 
 @trace_function(
     "generate_answer",
-    metadata_factory=lambda question, user_id, document_id=None: {
+    metadata_factory=lambda question, user_id, document_id=None, **kwargs: {
         "user_id": user_id,
         "document_id": document_id,
         "llm_model": settings.LLM_MODEL,
@@ -78,13 +89,14 @@ def generate_answer(
     question: str,
     user_id: str,
     document_id: Optional[str] = None,
+    hf_token: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Full RAG pipeline: retrieve → build context → generate answer.
     Returns dict with 'answer' and 'sources'.
     """
-    # Get HuggingFace InferenceClient singleton (created once, reused)
-    client = get_llm_client()
+    # Get HuggingFace InferenceClient per-request
+    client = get_llm_client(hf_token)
 
     # ── Handle greetings ─────────────────────────────
     # Short-circuit: if user just says "hello", skip RAG entirely
@@ -117,7 +129,12 @@ def generate_answer(
 
     # ── Build prompt ─────────────────────────────────
     # Format retrieved chunks into a readable context block, then inject into the RAG prompt template
-    context = build_context(chunks)
+    context = build_augmented_context(
+        chunks=chunks,
+        question=question,
+        user_id=user_id,
+        document_id=document_id,
+    )
     user_content = RAG_PROMPT_TEMPLATE.format(context=context, question=question)
     messages = _chat_messages(SYSTEM_PROMPT, user_content)
 
@@ -156,7 +173,7 @@ def generate_answer(
 
 @trace_function(
     "generate_answer_stream",
-    metadata_factory=lambda question, user_id, document_id=None: {
+    metadata_factory=lambda question, user_id, document_id=None, **kwargs: {
         "user_id": user_id,
         "document_id": document_id,
         "llm_model": settings.LLM_MODEL,
@@ -166,13 +183,14 @@ def generate_answer_stream(
     question: str,
     user_id: str,
     document_id: Optional[str] = None,
+    hf_token: Optional[str] = None,
 ) -> Generator[str, None, None]:
     """
     Streaming RAG pipeline — yields SSE-formatted chunks.
     First yields sources, then streams answer tokens.
     """
-    # Get HuggingFace InferenceClient singleton (created once, reused)
-    client = get_llm_client()
+    # Get HuggingFace InferenceClient per-request
+    client = get_llm_client(hf_token)
 
     # ── Handle greetings ─────────────────────────────
     # Short-circuit: if user just says "hello", skip RAG entirely
@@ -230,7 +248,12 @@ def generate_answer_stream(
 
     # ── Build prompt ─────────────────────────────────
     # Format retrieved chunks into a readable context block, then inject into the RAG prompt template
-    context = build_context(chunks)
+    context = build_augmented_context(
+        chunks=chunks,
+        question=question,
+        user_id=user_id,
+        document_id=document_id,
+    )
     user_content = RAG_PROMPT_TEMPLATE.format(context=context, question=question)
     messages = _chat_messages(SYSTEM_PROMPT, user_content)
 
