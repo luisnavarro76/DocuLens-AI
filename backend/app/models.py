@@ -8,11 +8,9 @@ import hashlib
 from datetime import datetime, timezone
 
 from cryptography.fernet import Fernet
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text, Boolean
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text, Boolean, Enum as SQLAlchemyEnum
 from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text, Boolean, Enum as SQLAlchemyEnum
-from sqlalchemy.types import TypeDecorator
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -85,11 +83,6 @@ class EncryptedString(TypeDecorator):
             return value
 
 
-def generate_uuid():
-    """Generates a standard unique string identifier for database records."""
-    return str(uuid.uuid4())
-
-
 class UserRole(str, enum.Enum):
     """
     Defines the available user roles for Role-Based Access Control (RBAC).
@@ -129,6 +122,7 @@ class User(Base):
     documents = relationship("Document", back_populates="owner", cascade="all, delete-orphan")
     messages = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")
     api_keys = relationship("ApiKey", back_populates="user", cascade="all, delete-orphan")
+    chat_sessions = relationship("ChatSession", back_populates="user", cascade="all, delete-orphan")
 
 
 class ApiKey(Base):
@@ -148,6 +142,22 @@ class ApiKey(Base):
     user = relationship("User", back_populates="api_keys")
 
 
+class ChatSession(Base):
+    """
+    Groups chat messages into logical sessions/threads.
+    """
+    __tablename__ = "chat_sessions"
+
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID, ForeignKey("users.id"), nullable=False, index=True)
+    title = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user = relationship("User", back_populates="chat_sessions")
+    messages = relationship("ChatMessage", back_populates="session", cascade="all, delete-orphan")
+
+
 class Document(Base):
     """
     Metadata and processing status for files uploaded by users.
@@ -159,11 +169,6 @@ class Document(Base):
     filename = Column(String(255), nullable=False)        # Stored filename (UUID-based)
     original_name = Column(String(255), nullable=False)    # User's original filename
     file_size = Column(Integer, default=0)                 # Size in bytes
-    id = Column(String, primary_key=True, default=generate_uuid)
-    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
-    filename = Column(String(255), nullable=False)         # Internal UUID-based filename
-    original_name = Column(String(255), nullable=False)     # Original name for user display
-    file_size = Column(Integer, default=0)                  # Size in bytes
     page_count = Column(Integer, default=0)
     chunk_count = Column(Integer, default=0)
     status = Column(String(20), default="pending")          # pending | processing | ready | failed
@@ -185,6 +190,7 @@ class ChatMessage(Base):
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
     user_id = Column(GUID, ForeignKey("users.id"), nullable=False, index=True)
     document_id = Column(GUID, ForeignKey("documents.id"), nullable=True, index=True)
+    session_id = Column(GUID, ForeignKey("chat_sessions.id"), nullable=True, index=True)
     role = Column(String(20), nullable=False)  # "user" | "assistant"
     content = Column(Text, nullable=False)
     sources_json = Column(Text, nullable=True)  # JSON representation of retrieved sources
@@ -193,6 +199,7 @@ class ChatMessage(Base):
     # Relationships
     user = relationship("User", back_populates="messages")
     document = relationship("Document", back_populates="messages")
+    session = relationship("ChatSession", back_populates="messages")
     shared_message = relationship("SharedMessage", back_populates="message", uselist=False, cascade="all, delete-orphan")
 
 
