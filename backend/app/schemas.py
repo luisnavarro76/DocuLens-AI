@@ -4,6 +4,7 @@ Pydantic schemas for API request/response validation.
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from datetime import datetime
+from app.models import UserRole
 
 
 # ── Auth ─────────────────────────────────────────────
@@ -75,6 +76,7 @@ class UserResponse(BaseModel):
     id: str
     username: str
     email: str
+    role: UserRole
     is_admin: bool
     hf_token: Optional[str] = None
     created_at: datetime
@@ -131,9 +133,12 @@ class DiskUsageResponse(BaseModel):
 class AdminStatsResponse(BaseModel):
     total_users: int
     total_pdfs_uploaded: int
+    total_documents: int
+    total_messages: int
     average_query_response_time_ms: float
     query_count: int
     disk_space_usage: DiskUsageResponse
+    users: List[UserResponse]
 
 
 # ── Chat ─────────────────────────────────────────────
@@ -172,6 +177,8 @@ class ChatHistoryResponse(BaseModel):
     messages: List[ChatMessageResponse]
     document_id: Optional[str] = None
 
+class UploadUrl(BaseModel):
+    url: str
 
 class ShareAnswerResponse(BaseModel):
     id: str
