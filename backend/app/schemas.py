@@ -4,6 +4,7 @@ Pydantic schemas for API request/response validation.
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from datetime import datetime
+from app.models import UserRole
 
 
 # ── Auth ─────────────────────────────────────────────
@@ -89,6 +90,7 @@ class UserResponse(BaseModel):
     id: str
     username: str
     email: str
+    role: UserRole
     is_admin: bool
     hf_token: Optional[str] = None
     created_at: datetime
@@ -145,9 +147,12 @@ class DiskUsageResponse(BaseModel):
 class AdminStatsResponse(BaseModel):
     total_users: int
     total_pdfs_uploaded: int
+    total_documents: int
+    total_messages: int
     average_query_response_time_ms: float
     query_count: int
     disk_space_usage: DiskUsageResponse
+    users: List[UserResponse]
 
 
 # ── Chat ─────────────────────────────────────────────
@@ -155,6 +160,7 @@ class AdminStatsResponse(BaseModel):
 class ChatRequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=2000)
     document_id: Optional[str] = None
+    session_id: Optional[str] = None
 
 
 class SourceChunk(BaseModel):
@@ -186,6 +192,8 @@ class ChatHistoryResponse(BaseModel):
     messages: List[ChatMessageResponse]
     document_id: Optional[str] = None
 
+class UploadUrl(BaseModel):
+    url: str
 
 class ShareAnswerResponse(BaseModel):
     id: str
@@ -197,6 +205,21 @@ class ShareAnswerResponse(BaseModel):
 class ShareLinkResponse(BaseModel):
     message_id: str
     share_url: str
+
+
+# ── Chat Session ──────────────────────────────────────
+
+class ChatSessionCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+
+
+class ChatSessionResponse(BaseModel):
+    id: str
+    title: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 # Rebuild models for forward references
