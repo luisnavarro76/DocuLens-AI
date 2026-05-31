@@ -172,6 +172,8 @@ class ChatHistoryResponse(BaseModel):
     messages: List[ChatMessageResponse]
     document_id: Optional[str] = None
 
+class UploadUrl(BaseModel):
+    url: str
 
 class ShareAnswerResponse(BaseModel):
     id: str
