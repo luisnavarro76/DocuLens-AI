@@ -9,6 +9,7 @@ from typing import List, Dict, Any, Optional, Generator
 from huggingface_hub import InferenceClient
 from app.config import get_settings
 from app.rag.retriever import retrieve
+from app.rag.graph_retriever import get_entity_context
 from app.rag.prompts import SYSTEM_PROMPT, RAG_PROMPT_TEMPLATE, GREETING_PROMPT
 from app.rag.tracing import trace_function
 
@@ -46,6 +47,26 @@ def build_context(chunks: List[Dict[str, Any]]) -> str:
         )
 
     return "\n\n---\n\n".join(context_parts)
+
+
+def build_augmented_context(
+    chunks: List[Dict[str, Any]],
+    question: str,
+    user_id: str,
+    document_id: Optional[str] = None,
+) -> str:
+    """Combine vector-retrieved excerpts with GraphRAG relationships."""
+    context = build_context(chunks)
+    graph_context = get_entity_context(
+        query=question,
+        user_id=user_id,
+        document_id=document_id,
+    )
+
+    if not graph_context:
+        return context
+
+    return f"{context}\n\n---\n\n{graph_context}"
 
 
 def _chat_messages(system: str, user_content: str) -> list:
@@ -108,7 +129,12 @@ def generate_answer(
 
     # ── Build prompt ─────────────────────────────────
     # Format retrieved chunks into a readable context block, then inject into the RAG prompt template
-    context = build_context(chunks)
+    context = build_augmented_context(
+        chunks=chunks,
+        question=question,
+        user_id=user_id,
+        document_id=document_id,
+    )
     user_content = RAG_PROMPT_TEMPLATE.format(context=context, question=question)
     messages = _chat_messages(SYSTEM_PROMPT, user_content)
 
@@ -222,7 +248,12 @@ def generate_answer_stream(
 
     # ── Build prompt ─────────────────────────────────
     # Format retrieved chunks into a readable context block, then inject into the RAG prompt template
-    context = build_context(chunks)
+    context = build_augmented_context(
+        chunks=chunks,
+        question=question,
+        user_id=user_id,
+        document_id=document_id,
+    )
     user_content = RAG_PROMPT_TEMPLATE.format(context=context, question=question)
     messages = _chat_messages(SYSTEM_PROMPT, user_content)
 
