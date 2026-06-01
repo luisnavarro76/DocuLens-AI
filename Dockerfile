@@ -27,6 +27,9 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
+    libmagic1 \
+    tesseract-ocr \
+    tesseract-ocr-eng \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
