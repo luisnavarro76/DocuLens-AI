@@ -21,8 +21,6 @@ pydantic[email]
 # Document Processing
 PyMuPDF
 python-docx
-pytesseract
-Pillow
 
 # LangChain & RAG
 langchain
