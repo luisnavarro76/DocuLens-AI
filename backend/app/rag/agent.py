@@ -129,6 +129,7 @@ def generate_answer(
                 "page": chunk["page"],
                 "score": chunk["score"],
                 "confidence": chunk.get("confidence", 0),
+                "bbox": chunk.get("bbox", ""),
             }
             for chunk in getattr(pdf_tool, "last_sources", [])
         ]
@@ -199,6 +200,7 @@ def generate_answer_stream(
                             "page": chunk["page"],
                             "score": chunk["score"],
                             "confidence": chunk.get("confidence", 0),
+                            "bbox": chunk.get("bbox", ""),
                         }
                         for chunk in pdf_tool.last_sources
                     ]
