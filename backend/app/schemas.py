@@ -164,6 +164,7 @@ class SourceChunk(BaseModel):
     page: int
     score: float
     confidence: float
+    bbox: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
