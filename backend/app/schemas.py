@@ -156,6 +156,7 @@ class ChatRequest(BaseModel):
     document_id: Optional[str] = None
     document_ids: Optional[List[str]] = None
     session_id: Optional[str] = None
+    top_k: int = Field(default=5, ge=1, le=20)
 
 
 class SourceChunk(BaseModel):

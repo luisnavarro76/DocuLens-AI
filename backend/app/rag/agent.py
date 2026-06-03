@@ -34,10 +34,11 @@ def get_agent_executor(
     user_id: str,
     document_id: Optional[str] = None,
     hf_token: Optional[str] = None,
+    top_k: Optional[int] = None,
 ):
     """Initialize the LangChain ReAct agent executor."""
     # Initialize tools
-    pdf_tool = PDFSearchTool(user_id=user_id, document_id=document_id)
+    pdf_tool = PDFSearchTool(user_id=user_id, document_id=document_id, top_k=top_k)
     tools = [pdf_tool, MathTool(), WebSearchTool()]
 
     # Initialize LLM
@@ -87,6 +88,7 @@ def generate_answer(
     user_id: str,
     document_id: Optional[str] = None,
     hf_token: Optional[str] = None,
+    top_k: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     Agentic generation: retrieve via tools → reason → generate answer.
@@ -111,7 +113,7 @@ def generate_answer(
 
     # ── Run Agent ────────────────────────────────────
     try:
-        executor, pdf_tool = get_agent_executor(user_id, document_id, hf_token)
+        executor, pdf_tool = get_agent_executor(user_id, document_id, hf_token, top_k)
         result = executor.invoke({"input": question})
         
         raw_answer = result.get("output", "")
@@ -156,6 +158,7 @@ def generate_answer_stream(
     user_id: str,
     document_id: Optional[str] = None,
     hf_token: Optional[str] = None,
+    top_k: Optional[int] = None,
 ) -> Generator[str, None, None]:
     """
     Streaming Agentic pipeline.
@@ -181,7 +184,7 @@ def generate_answer_stream(
 
     # ── Run Agent ────────────────────────────────────
     try:
-        executor, pdf_tool = get_agent_executor(user_id, document_id, hf_token)
+        executor, pdf_tool = get_agent_executor(user_id, document_id, hf_token, top_k)
         
         sources_sent = False
 
