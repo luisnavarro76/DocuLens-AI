@@ -261,16 +261,16 @@ def get_session_history(
     return ChatHistoryResponse(messages=formatted, document_id=None)
 
 
-def generate_answer(question: str, user_id: str, document_id: Optional[str] = None, hf_token: Optional[str] = None):
+def generate_answer(question: str, user_id: str, document_id: Optional[str] = None, hf_token: Optional[str] = None, top_k: Optional[int] = None):
     from app.rag.agent import generate_answer as _generate_answer
 
-    return _generate_answer(question=question, user_id=user_id, document_id=document_id, hf_token=hf_token)
+    return _generate_answer(question=question, user_id=user_id, document_id=document_id, hf_token=hf_token, top_k=top_k)
 
 
-def generate_answer_stream(question: str, user_id: str, document_id: Optional[str] = None, hf_token: Optional[str] = None):
+def generate_answer_stream(question: str, user_id: str, document_id: Optional[str] = None, hf_token: Optional[str] = None, top_k: Optional[int] = None):
     from app.rag.agent import generate_answer_stream as _generate_answer_stream
 
-    return _generate_answer_stream(question=question, user_id=user_id, document_id=document_id, hf_token=hf_token)
+    return _generate_answer_stream(question=question, user_id=user_id, document_id=document_id, hf_token=hf_token, top_k=top_k)
 
 
 @router.post(
@@ -334,6 +334,7 @@ def ask_question(
             user_id=user.id,
             document_id=payload.document_id,
             hf_token=user.hf_token,
+            top_k=payload.top_k,
         )
 
         # Save to chat history
@@ -418,6 +419,7 @@ def ask_question_stream(
                 user_id=user.id,
                 document_id=payload.document_id,
                 hf_token=user.hf_token,
+                top_k=payload.top_k,
             ):
                 yield chunk
 
