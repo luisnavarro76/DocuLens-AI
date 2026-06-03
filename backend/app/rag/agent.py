@@ -129,14 +129,14 @@ def generate_answer(
     try:
         executor, pdf_tool, formatted_history = get_agent_executor(user_id, document_id, hf_token, top_k, chat_history)
         result = executor.invoke({"input": question, "chat_history": formatted_history})
-        
+
         raw_answer = result.get("output", "")
         try:
             answer = parse_agent_output(raw_answer)
         except OutputParserError as e:
             logger.warning(f"Rejected malformed LLM output: {e}")
             answer = MALFORMED_OUTPUT_MESSAGE
-        
+
         # Retrieve sources from the PDF tool if it was used
         sources = [
             {
@@ -148,7 +148,7 @@ def generate_answer(
             }
             for chunk in getattr(pdf_tool, "last_sources", [])
         ]
-        
+
         return {"answer": answer, "sources": sources}
 
     except Exception as e:
@@ -200,15 +200,14 @@ def generate_answer_stream(
     # ── Run Agent ────────────────────────────────────
     try:
         executor, pdf_tool, formatted_history = get_agent_executor(user_id, document_id, hf_token, top_k, chat_history)
-        
+
         sources_sent = False
 
         for step in executor.stream({"input": question, "chat_history": formatted_history}):
             if "actions" in step:
                 continue
-            
+
             elif "intermediate_steps" in step:
-                # If pdf_search was just run, we can yield sources
                 if not sources_sent and getattr(pdf_tool, "last_sources", []):
                     sources = [
                         {
