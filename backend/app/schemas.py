@@ -132,9 +132,22 @@ class DocumentResponse(BaseModel):
     error_message: Optional[str] = None
     uploaded_at: datetime
     summary: Optional[str] = None # New field for document summary
+    task_id: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+
+class DocumentRename(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("Document name cannot be empty")
+        return stripped
 
 
 class DocumentStatusResponse(BaseModel):
