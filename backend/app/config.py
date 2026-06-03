@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     JWT_ACCESS_EXPIRY_MINUTES: int = 15
     JWT_REFRESH_EXPIRY_DAYS: int = 7
     GOOGLE_CLIENT_ID: str = ""
+    HF_CLIENT_ID: str = ""
+    HF_CLIENT_SECRET: str = ""
+    HF_REDIRECT_URI: str = ""
+    FRONTEND_URL: str = "http://localhost:3000"
 
     # Google Drive background sync
     DRIVE_SYNC_ENABLED: bool = False
@@ -93,6 +97,14 @@ class Settings(BaseSettings):
     VISION_MODEL: str | None = None
     OPENAI_API_KEY: str = ""
 
+    # ── Workspace Invitation ─────────────────────────
+    APP_URL: str = "http://localhost:3000"
+    INVITE_TOKEN_EXPIRY_HOURS: int = 72
+    EMAIL_FROM: str = "no-reply@example.com"
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 0
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
 
     @property
     def cors_origins(self) -> list[str]:
