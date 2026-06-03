@@ -1,10 +1,13 @@
+VALID_TEST_PASSWORD = "Password1!"
+
+
 def test_register_success(client):
     response = client.post(
         "/api/v1/auth/register",
         json={
             "username": "newuser",
             "email": "newuser@example.com",
-            "password": "password123",
+            "password": VALID_TEST_PASSWORD,
         },
     )
 
@@ -19,7 +22,7 @@ def test_register_duplicate_email_or_username_conflict(client):
     payload = {
         "username": "dupuser",
         "email": "dup@example.com",
-        "password": "password123",
+        "password": VALID_TEST_PASSWORD,
     }
     first = client.post("/api/v1/auth/register", json=payload)
     assert first.status_code == 201
@@ -37,6 +40,40 @@ def test_register_duplicate_email_or_username_conflict(client):
     )
     assert duplicate_username.status_code == 409
     assert duplicate_username.json()["detail"] == "Username already taken"
+
+
+def test_register_rejects_weak_password(client):
+    response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": "weakpassuser",
+            "email": "weakpass@example.com",
+            "password": "123456",
+        },
+    )
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert isinstance(detail, list)
+    messages = " ".join(item["msg"] for item in detail)
+    assert "uppercase" in messages.lower() or "8 characters" in messages.lower()
+
+
+def test_register_rejects_password_missing_special_character(client):
+    response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": "specialcharuser",
+            "email": "specialchar@example.com",
+            "password": "Password1",
+        },
+    )
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert isinstance(detail, list)
+    messages = " ".join(item["msg"] for item in detail).lower()
+    assert "special character" in messages
 
 
 def test_login_success(client, user):
