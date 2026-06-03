@@ -30,11 +30,22 @@ def get_llm_client(hf_token: Optional[str] = None) -> InferenceClient:
     )
 
 
+def _format_chat_history(messages: List[Dict[str, str]]) -> str:
+    if not messages:
+        return ""
+    lines = ["Previous conversation:"]
+    for msg in messages:
+        role = "User" if msg["role"] == "user" else "Assistant"
+        lines.append(f"{role}: {msg['content']}")
+    return "\n".join(lines)
+
+
 def get_agent_executor(
     user_id: str,
     document_id: Optional[str] = None,
     hf_token: Optional[str] = None,
     top_k: Optional[int] = None,
+    chat_history: Optional[List[Dict[str, str]]] = None,
 ):
     """Initialize the LangChain ReAct agent executor."""
     # Initialize tools
@@ -62,7 +73,9 @@ def get_agent_executor(
         max_iterations=5,
     )
 
-    return executor, pdf_tool
+    formatted_history = _format_chat_history(chat_history) if chat_history else ""
+
+    return executor, pdf_tool, formatted_history
 
 
 def is_greeting(question: str) -> bool:
@@ -89,6 +102,7 @@ def generate_answer(
     document_id: Optional[str] = None,
     hf_token: Optional[str] = None,
     top_k: Optional[int] = None,
+    chat_history: Optional[List[Dict[str, str]]] = None,
 ) -> Dict[str, Any]:
     """
     Agentic generation: retrieve via tools → reason → generate answer.
@@ -113,8 +127,8 @@ def generate_answer(
 
     # ── Run Agent ────────────────────────────────────
     try:
-        executor, pdf_tool = get_agent_executor(user_id, document_id, hf_token, top_k)
-        result = executor.invoke({"input": question})
+        executor, pdf_tool, formatted_history = get_agent_executor(user_id, document_id, hf_token, top_k, chat_history)
+        result = executor.invoke({"input": question, "chat_history": formatted_history})
         
         raw_answer = result.get("output", "")
         try:
@@ -159,6 +173,7 @@ def generate_answer_stream(
     document_id: Optional[str] = None,
     hf_token: Optional[str] = None,
     top_k: Optional[int] = None,
+    chat_history: Optional[List[Dict[str, str]]] = None,
 ) -> Generator[str, None, None]:
     """
     Streaming Agentic pipeline.
@@ -184,11 +199,11 @@ def generate_answer_stream(
 
     # ── Run Agent ────────────────────────────────────
     try:
-        executor, pdf_tool = get_agent_executor(user_id, document_id, hf_token, top_k)
+        executor, pdf_tool, formatted_history = get_agent_executor(user_id, document_id, hf_token, top_k, chat_history)
         
         sources_sent = False
 
-        for step in executor.stream({"input": question}):
+        for step in executor.stream({"input": question, "chat_history": formatted_history}):
             if "actions" in step:
                 continue
             
