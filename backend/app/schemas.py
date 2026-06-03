@@ -178,6 +178,7 @@ class ChatMessageResponse(BaseModel):
     role: str
     content: str
     sources: List[SourceChunk] = []
+    feedback: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -206,6 +207,10 @@ class ShareAnswerResponse(BaseModel):
 class ShareLinkResponse(BaseModel):
     message_id: str
     share_url: str
+
+
+class FeedbackRequest(BaseModel):
+    feedback: Optional[str] = None
 
 
 # ── Chat Session ──────────────────────────────────────
