@@ -50,7 +50,7 @@ class Settings(BaseSettings):
 
     # ── File Upload ──────────────────────────────────────
     UPLOAD_DIR: str = "./data/uploads"
-    MAX_UPLOAD_SIZE_MB: int = 20
+    MAX_UPLOAD_SIZE_MB: int = 50
     ALLOWED_EXTENSIONS: set = {"pdf", "docx", "txt", "md"}
     ALLOWED_MIME_TYPES: dict = {
         ".pdf": ["application/pdf"],
