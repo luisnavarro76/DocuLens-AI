@@ -6,6 +6,8 @@ import logging
 import json
 from typing import List, Dict, Any, Optional, Generator
 
+from sympy import python
+
 from huggingface_hub import InferenceClient
 from langchain_classic.agents import create_react_agent, AgentExecutor
 from langchain_core.prompts import PromptTemplate
@@ -23,11 +25,18 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
+
 def get_llm_client(hf_token: Optional[str] = None) -> InferenceClient:
-    """Create a HuggingFace InferenceClient per-request (for simple tasks)."""
-    return InferenceClient(
-        token=hf_token or settings.HF_TOKEN,
-    )
+    """Create a HuggingFace InferenceClient per-request."""
+
+    token = hf_token or settings.HF_TOKEN
+
+    if not token:
+        raise ValueError(
+            "Hugging Face API token is missing. Please configure HF_TOKEN."
+        )
+
+    return InferenceClient(token=token)
 
 
 def _format_chat_history(messages: List[Dict[str, str]]) -> str:
@@ -47,14 +56,22 @@ def get_agent_executor(
     chat_history: Optional[List[Dict[str, str]]] = None,
 ):
     """Initialize the LangChain ReAct agent executor."""
+
     # Initialize tools
     pdf_tool = PDFSearchTool(user_id=user_id, document_id=document_id)
     tools = [pdf_tool, MathTool(), WebSearchTool()]
 
     # Initialize LLM
+    token = hf_token or settings.HF_TOKEN
+
+    if not token:
+        raise ValueError(
+            "Hugging Face API token is missing. Please configure HF_TOKEN."
+        )
+
     llm = HuggingFaceEndpoint(
         repo_id=settings.LLM_MODEL,
-        huggingfacehub_api_token=hf_token or settings.HF_TOKEN,
+        huggingfacehub_api_token=token,
         max_new_tokens=settings.LLM_MAX_NEW_TOKENS,
         temperature=settings.LLM_TEMPERATURE,
         timeout=300,
@@ -75,7 +92,6 @@ def get_agent_executor(
     formatted_history = _format_chat_history(chat_history) if chat_history else ""
 
     return executor, pdf_tool, formatted_history
-
 
 def is_greeting(question: str) -> bool:
     """Detect if the question is a casual greeting rather than a document query."""
