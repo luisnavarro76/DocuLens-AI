@@ -12,6 +12,8 @@ import {
   FileText, Upload, Trash2, FileCheck, Clock, AlertCircle, Loader2, FolderOpen,
 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
+import { toast } from "sonner";
+
 
 interface Props {
   documents: DocInfo[];
@@ -44,9 +46,11 @@ export default function DocumentSidebar({ documents = [], activeDoc, onSelectDoc
             setUploadProgress(((i + 1) / acceptedFiles.length) * 100);
           }
           onDocumentsChange();
+          toast.success("Upload successful");
         } catch (err) {
           const message = err instanceof Error ? err.message : t("documents.uploadFailed");
           setUploadError(message);
+          toast.error(`Upload failed: ${message}`);
         } finally {
           setUploading(false);
           setUploadProgress(0);
