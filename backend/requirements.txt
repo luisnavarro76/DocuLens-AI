@@ -63,3 +63,5 @@ python-docx
 pypdf
 reportlab
 crawl4ai
+
+google-auth-oauthlib

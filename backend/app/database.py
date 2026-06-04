@@ -47,7 +47,8 @@ def _migrate_schema():
     existing_columns = {c["name"] for c in inspector.get_columns("users")}
 
     migrations = [
-        ("users", "hf_token", "ALTER TABLE users ADD COLUMN hf_token VARCHAR(255)"),
+        ("users", "hf_token", "ALTER TABLE users ADD COLUMN hf_token TEXT"),
+        ("users", "google_refresh_token", "ALTER TABLE users ADD COLUMN google_refresh_token TEXT"),
         ("users", "role", "ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'user'"),
     ]
 

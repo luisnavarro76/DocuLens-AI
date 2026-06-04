@@ -59,6 +59,14 @@ class HFTokenUpdate(BaseModel):
     hf_token: str
 
 
+class GoogleDriveAuthUrlResponse(BaseModel):
+    auth_url: str
+
+
+class GoogleDriveStatusResponse(BaseModel):
+    connected: bool
+
+
 class ApiKeyResponse(BaseModel):
     id: str
     key_preview: str
