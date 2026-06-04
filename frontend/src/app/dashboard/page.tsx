@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
 import { api, CONNECTION_ERROR_BANNER_MESSAGE, CONNECTION_ERROR_MESSAGE } from "@/lib/api";
 import Header from "@/components/layout/Header";
 import DocumentSidebar from "@/components/document/DocumentSidebar";
@@ -41,6 +42,8 @@ const PDFViewer = dynamic(() => import("@/components/document/PDFViewer"), {
 });
 
 export interface DocInfo {
+  chunk_size?: number;
+  chunk_overlap?: number;
   summary: string;
   id: string;
   original_name: string;
@@ -53,28 +56,50 @@ export interface DocInfo {
 }
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, initialized } = useAuth();
   const router = useRouter();
 
   const [documents, setDocuments] = useState<DocInfo[]>([]);
+  const prevDocsRef = useRef<Record<string, string>>({});
   const [activeDoc, setActiveDoc] = useState<DocInfo | null>(null);
   const [pdfPage, setPdfPage] = useState(1);
+  const [pdfHighlightTarget, setPdfHighlightTarget] = useState<{
+    page: number;
+    rects?: {
+      left: number;
+      top: number;
+      width: number;
+      height: number;
+      unit?: "percent" | "pixels" | "pdf";
+    }[];
+  } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [viewerOpen, setViewerOpen] = useState(true);
   const [connectionError, setConnectionError] = useState("");
+  const [documentsLoading, setDocumentsLoading] = useState(true);
 
-    // Auth guard
+  const handleDocumentRenamed = useCallback((renamedDocument: DocInfo) => {
+    setDocuments((current) =>
+      current.map((document) => (document.id === renamedDocument.id ? renamedDocument : document))
+    );
+    setActiveDoc((current) => (current?.id === renamedDocument.id ? renamedDocument : current));
+  }, []);
+
+  // Auth guard
+
   useEffect(() => {
-    if (!loading && !user) router.replace("/login");
-  }, [user, loading, router]);
+    if (initialized && !user) router.replace("/login");
+  }, [user, initialized, router]);
 
-  // Intercept dashboard if Hugging Face token configuration is missing
+  // Check if Hugging Face token configuration is present
   useEffect(() => {
     if (user) {
-      const existingHfToken = localStorage.getItem("hf_token");
+      const hasHfToken = !!(user.hf_token || localStorage.getItem("hf_token"));
 
-      if (!existingHfToken) {
-        console.warn("Hugging Face API configuration key missing.");
+      if (!hasHfToken) {
+        console.info(
+          "Hugging Face API token is not configured. Personal model access will fall back to the system default unless set in the user profile menu."
+        );
       }
     }
   }, [user]);
@@ -82,6 +107,7 @@ export default function DashboardPage() {
 
   // Load documents
   const loadDocuments = useCallback(async () => {
+    setDocumentsLoading(true);
     try {
       const data = await api.get<{ documents?: DocInfo[]; items?: DocInfo[] }>(
         "/api/v1/documents/"
@@ -95,6 +121,8 @@ export default function DashboardPage() {
           ? CONNECTION_ERROR_BANNER_MESSAGE
           : `⚠️ ${message}`
       );
+    } finally {
+      setDocumentsLoading(false);
     }
   }, []);
 
@@ -104,6 +132,25 @@ export default function DashboardPage() {
       await loadDocuments();
     })();
   }, [user, loadDocuments]);
+
+  // Ingest status change toast notification handler
+  useEffect(() => {
+    const prev = prevDocsRef.current;
+    const nextPrevDocs: Record<string, string> = {};
+    (documents || []).forEach((doc) => {
+      nextPrevDocs[doc.id] = doc.status;
+
+      const oldStatus = prev[doc.id];
+      if (oldStatus && oldStatus !== doc.status) {
+        if (doc.status === "ready") {
+          toast.success(`🎉 Ingestion complete: '${doc.original_name}' is ready!`);
+        } else if (doc.status === "failed") {
+          toast.error(`❌ Ingestion failed for '${doc.original_name}': ${doc.error_message || "Unknown error"}`);
+        }
+      }
+    });
+    prevDocsRef.current = nextPrevDocs;
+  }, [documents]);
 
   // Poll for processing status
   useEffect(() => {
@@ -116,7 +163,7 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, [documents, loadDocuments]);
 
-  if (loading || !user) {
+  if (!initialized || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse-glow w-12 h-12 rounded-full bg-primary/20" />
@@ -129,11 +176,13 @@ export default function DashboardPage() {
     <DocumentSidebar
       documents={documents}
       activeDoc={activeDoc}
+      loading={documentsLoading}
       onSelectDoc={(doc) => {
         setActiveDoc(doc);
         setPdfPage(1);
       }}
       onDocumentsChange={loadDocuments}
+      onDocumentRenamed={handleDocumentRenamed}
     />
   );
 
@@ -171,8 +220,9 @@ export default function DashboardPage() {
         <div className="flex-1 min-w-0 flex flex-col">
           <ChatPanel
             activeDoc={activeDoc}
-            onCitationClick={(page) => {
-              setPdfPage(page);
+            onCitationClick={(target) => {
+              setPdfPage(target.page);
+              setPdfHighlightTarget({ page: target.page, rects: target.highlightRects });
               if (!viewerOpen) setViewerOpen(true);
             }}
           />
@@ -184,8 +234,14 @@ export default function DashboardPage() {
             <PDFViewer
               documentId={activeDoc.id}
               currentPage={pdfPage}
-              onPageChange={setPdfPage}
+              onPageChange={(page) => {
+                setPdfPage(page);
+                if (pdfHighlightTarget?.page !== page) {
+                  setPdfHighlightTarget(null);
+                }
+              }}
               totalPages={activeDoc.page_count}
+              highlightTarget={pdfHighlightTarget}
             />
           </div>
         )}

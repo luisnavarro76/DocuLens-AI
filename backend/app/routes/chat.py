@@ -4,7 +4,7 @@ Chat routes — ask questions with RAG, stream responses via SSE, manage history
 import html
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 import logging
 from typing import Optional, List
@@ -17,12 +17,14 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.metrics import record_query_response_time
 from app.models import User, ChatMessage, Document, SharedMessage, ChatSession
-from app.rate_limit import limiter
+from app.rate_limit import CHAT_QUERY_RATE_LIMIT, limiter
+from app.rag.security import UnsafePromptError, validate_user_input
 from app.schemas import (
     ChatRequest,
     ChatResponse,
     ChatMessageResponse,
     ChatHistoryResponse,
+    FeedbackRequest,
     ShareAnswerResponse,
     ShareLinkResponse,
     SourceChunk,
@@ -35,11 +37,25 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
 
-@router.get("/share/{message_id}", response_model=ShareAnswerResponse)
+@router.get(
+    "/share/{message_id}",
+    response_model=ShareAnswerResponse,
+    summary="Read a public shared answer",
+    description=(
+        "Returns a previously shared assistant answer and its safe citation "
+        "metadata without requiring authentication."
+    ),
+)
 def get_shared_answer(
     message_id: str,
     db: Session = Depends(get_db),
 ):
+    """Return a public shared assistant answer by message ID.
+
+    Only assistant messages that already have a `SharedMessage` record are
+    exposed. User prompts, private chat history, and unshared answers remain
+    protected.
+    """
     message = db.query(ChatMessage).filter(
         ChatMessage.id == message_id,
         ChatMessage.role == "assistant",
@@ -51,12 +67,25 @@ def get_shared_answer(
     return _share_answer_response(message)
 
 
-@router.post("/share/{message_id}", response_model=ShareLinkResponse)
+@router.post(
+    "/share/{message_id}",
+    response_model=ShareLinkResponse,
+    summary="Create a public share link for an assistant answer",
+    description=(
+        "Marks one authenticated user's assistant message as shareable and "
+        "returns the frontend share URL."
+    ),
+)
 def create_share_link(
     message_id: str,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """Create or reuse a public share record for an assistant answer.
+
+    The message must belong to the authenticated user and must have the
+    assistant role. User-authored messages cannot be shared through this route.
+    """
     message = db.query(ChatMessage).filter(
         ChatMessage.id == message_id,
         ChatMessage.user_id == user.id,
@@ -80,7 +109,12 @@ def create_share_link(
     )
 
 
-@router.get("/sessions", response_model=List[ChatSessionResponse])
+@router.get(
+    "/sessions",
+    response_model=List[ChatSessionResponse],
+    summary="List chat sessions",
+    description="Returns all chat sessions owned by the authenticated user, newest first.",
+)
 def get_chat_sessions(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -95,13 +129,19 @@ def get_chat_sessions(
     return sessions
 
 
-@router.post("/sessions", response_model=ChatSessionResponse, status_code=201)
+@router.post(
+    "/sessions",
+    response_model=ChatSessionResponse,
+    status_code=201,
+    summary="Create a chat session",
+    description="Creates a named chat session owned by the authenticated user.",
+)
 def create_chat_session(
     payload: ChatSessionCreate,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Create a new chat session."""
+    """Create a new chat session for the authenticated user."""
     session = ChatSession(
         user_id=user.id,
         title=payload.title,
@@ -112,14 +152,19 @@ def create_chat_session(
     return session
 
 
-@router.put("/sessions/{session_id}", response_model=ChatSessionResponse)
+@router.put(
+    "/sessions/{session_id}",
+    response_model=ChatSessionResponse,
+    summary="Rename a chat session",
+    description="Renames one chat session after verifying it belongs to the authenticated user.",
+)
 def rename_chat_session(
     session_id: str,
     payload: ChatSessionCreate,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Rename an existing chat session."""
+    """Rename an existing chat session owned by the authenticated user."""
     session = (
         db.query(ChatSession)
         .filter(
@@ -136,13 +181,17 @@ def rename_chat_session(
     return session
 
 
-@router.delete("/sessions/{session_id}")
+@router.delete(
+    "/sessions/{session_id}",
+    summary="Delete a chat session",
+    description="Deletes one owned chat session and cascades its messages through the database relationship.",
+)
 def delete_chat_session(
     session_id: str,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Delete a chat session and all its messages."""
+    """Delete a chat session owned by the authenticated user."""
     session = (
         db.query(ChatSession)
         .filter(
@@ -158,13 +207,18 @@ def delete_chat_session(
     return Response(status_code=204)
 
 
-@router.get("/history/session/{session_id}", response_model=ChatHistoryResponse)
+@router.get(
+    "/history/session/{session_id}",
+    response_model=ChatHistoryResponse,
+    summary="Get chat history for a session",
+    description="Returns ordered user and assistant messages for one owned chat session.",
+)
 def get_session_history(
     session_id: str,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Retrieve chat history for a specific chat session."""
+    """Retrieve ordered chat history for a specific owned chat session."""
     session = (
         db.query(ChatSession)
         .filter(
@@ -208,34 +262,48 @@ def get_session_history(
     return ChatHistoryResponse(messages=formatted, document_id=None)
 
 
-def generate_answer(question: str, user_id: str, document_id: Optional[str] = None, hf_token: Optional[str] = None):
+def generate_answer(question: str, user_id: str, document_id: Optional[str] = None, hf_token: Optional[str] = None, chat_history: Optional[list] = None):
     from app.rag.agent import generate_answer as _generate_answer
 
-    return _generate_answer(question=question, user_id=user_id, document_id=document_id, hf_token=hf_token)
+    return _generate_answer(question=question, user_id=user_id, document_id=document_id, hf_token=hf_token, chat_history=chat_history)
 
 
-def generate_answer_stream(question: str, user_id: str, document_id: Optional[str] = None, hf_token: Optional[str] = None):
+def generate_answer_stream(question: str, user_id: str, document_id: Optional[str] = None, hf_token: Optional[str] = None, chat_history: Optional[list] = None):
     from app.rag.agent import generate_answer_stream as _generate_answer_stream
 
-    return _generate_answer_stream(question=question, user_id=user_id, document_id=document_id, hf_token=hf_token)
+    return _generate_answer_stream(question=question, user_id=user_id, document_id=document_id, hf_token=hf_token, chat_history=chat_history)
 
 
-@router.post("/ask", response_model=ChatResponse)
-@limiter.limit("10/minute")
+@router.post(
+    "/ask",
+    response_model=ChatResponse,
+    summary="Ask a RAG question",
+    description=(
+        "Runs non-streaming retrieval-augmented generation for the authenticated "
+        "user, optionally scoped to one ready document."
+    ),
+)
+@limiter.limit(CHAT_QUERY_RATE_LIMIT)
 def ask_question(
     request: Request,
     payload: ChatRequest,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Ask a question with RAG retrieval (non-streaming)."""
+    """Ask a question with RAG retrieval and return the complete answer."""
     started_at = time.perf_counter()
     try:
+        try:
+            validate_user_input(payload.question)
+        except UnsafePromptError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         # Validate document exists if specified
         if payload.document_id:
             doc = db.query(Document).filter(
                 Document.id == payload.document_id,
                 Document.user_id == user.id,
+                Document.is_deleted.is_(False),
             ).first()
 
             if not doc:
@@ -246,6 +314,10 @@ def ask_question(
                     status_code=400,
                     detail=f"Document is still {doc.status}. Please wait for processing to complete.",
                 )
+            
+            # Update last_accessed_at timestamp
+            doc.last_accessed_at = datetime.now(timezone.utc)
+            db.commit()
 
         # Resolve or create session
         session_id = payload.session_id
@@ -258,11 +330,26 @@ def ask_question(
                 db.refresh(session)
             session_id = session.id
 
+        # Build chat history from last 6 exchanges
+        recent_messages = (
+            db.query(ChatMessage)
+            .filter(
+                ChatMessage.session_id == session_id,
+                ChatMessage.user_id == user.id,
+            )
+            .order_by(ChatMessage.created_at.desc())
+            .limit(12)
+            .all()
+        )
+        recent_messages.reverse()
+        chat_history = [{"role": m.role, "content": m.content} for m in recent_messages]
+
         result = generate_answer(
             question=payload.question,
             user_id=user.id,
             document_id=payload.document_id,
             hf_token=user.hf_token,
+            chat_history=chat_history,
         )
 
         # Save to chat history
@@ -278,20 +365,33 @@ def ask_question(
         record_query_response_time(time.perf_counter() - started_at)
 
 
-@router.post("/ask/stream")
-@limiter.limit("10/minute")
+@router.post(
+    "/ask/stream",
+    summary="Stream a RAG answer",
+    description=(
+        "Runs retrieval-augmented generation and streams answer tokens as "
+        "server-sent events. The final assistant response is saved to history."
+    ),
+)
+@limiter.limit(CHAT_QUERY_RATE_LIMIT)
 def ask_question_stream(
     request: Request,
     payload: ChatRequest,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Ask a question with Server-Sent Events (SSE) streaming response."""
+    """Ask a question and stream the answer using Server-Sent Events."""
+    try:
+        validate_user_input(payload.question)
+    except UnsafePromptError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     # Validate document
     if payload.document_id:
         doc = db.query(Document).filter(
             Document.id == payload.document_id,
             Document.user_id == user.id,
+            Document.is_deleted.is_(False),
         ).first()
 
         if not doc:
@@ -302,6 +402,10 @@ def ask_question_stream(
                 status_code=400,
                 detail=f"Document is still {doc.status}. Please wait for processing to complete.",
             )
+        
+        # Update last_accessed_at timestamp
+        doc.last_accessed_at = datetime.now(timezone.utc)
+        db.commit()
 
     started_at = time.perf_counter()
 
@@ -315,6 +419,20 @@ def ask_question_stream(
             db.commit()
             db.refresh(session)
         session_id = session.id
+
+    # Build chat history from last 6 exchanges (before saving current message)
+    recent_messages = (
+        db.query(ChatMessage)
+        .filter(
+            ChatMessage.session_id == session_id,
+            ChatMessage.user_id == user.id,
+        )
+        .order_by(ChatMessage.created_at.desc())
+        .limit(12)
+        .all()
+    )
+    recent_messages.reverse()
+    chat_history = [{"role": m.role, "content": m.content} for m in recent_messages]
 
     # Save user message immediately
     _save_message(db, user.id, payload.document_id, "user", payload.question, session_id=session_id)
@@ -330,6 +448,7 @@ def ask_question_stream(
                 user_id=user.id,
                 document_id=payload.document_id,
                 hf_token=user.hf_token,
+                chat_history=chat_history,
             ):
                 yield chunk
 
@@ -365,7 +484,12 @@ def ask_question_stream(
     )
 
 
-@router.get("/history/{document_id}", response_model=ChatHistoryResponse)
+@router.get(
+    "/history/{document_id}",
+    response_model=ChatHistoryResponse,
+    summary="Get document chat history",
+    description="Returns ordered chat messages for one document owned by the authenticated user.",
+)
 def get_chat_history(
     document_id: str,
     user: User = Depends(get_current_user),
@@ -396,13 +520,21 @@ def get_chat_history(
             role=msg.role,
             content=msg.content,
             sources=sources,
+            feedback=msg.feedback,
             created_at=msg.created_at,
         ))
 
     return ChatHistoryResponse(messages=formatted, document_id=document_id)
 
 
-@router.get("/export/{document_id}")
+@router.get(
+    "/export/{document_id}",
+    summary="Export document chat history",
+    description=(
+        "Downloads one document's chat history as Markdown, plain text, or PDF. "
+        "The browser download flow authenticates with a query token."
+    ),
+)
 def export_chat_history(
     document_id: str,
     format: str = "md",
@@ -429,6 +561,7 @@ def export_chat_history(
     doc = db.query(Document).filter(
         Document.id == document_id,
         Document.user_id == resolved_user.id,
+        Document.is_deleted.is_(False),
     ).first()
 
     if not doc:
@@ -473,7 +606,11 @@ def export_chat_history(
     )
 
 
-@router.delete("/history/{document_id}")
+@router.delete(
+    "/history/{document_id}",
+    summary="Clear document chat history",
+    description="Deletes all chat messages for one document owned by the authenticated user.",
+)
 def clear_chat_history(
     document_id: str,
     user: User = Depends(get_current_user),
@@ -487,6 +624,51 @@ def clear_chat_history(
     db.commit()
 
     return {"message": "Chat history cleared"}
+
+
+@router.patch("/feedback/{message_id}")
+def submit_feedback(
+    message_id: str,
+    payload: FeedbackRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Submit thumbs up/down feedback for an assistant message.
+
+    Args:
+        message_id: The ID of the chat message to add feedback to.
+        payload: FeedbackRequest containing `feedback` ("up", "down", or null to clear).
+        user: The currently authenticated user.
+        db: SQLAlchemy database session.
+
+    Returns:
+        ChatMessageResponse: The updated message with feedback.
+
+    Raises:
+        HTTPException: 404 if the message does not exist or does not belong to the user.
+        HTTPException: 400 if the message is not an assistant message.
+    """
+    msg = db.query(ChatMessage).filter(
+        ChatMessage.id == message_id,
+        ChatMessage.user_id == user.id,
+    ).first()
+
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    if msg.role != "assistant":
+        raise HTTPException(status_code=400, detail="Can only provide feedback on assistant messages")
+
+    msg.feedback = payload.feedback
+    db.commit()
+    db.refresh(msg)
+
+    return ChatMessageResponse(
+        id=msg.id,
+        role=msg.role,
+        content=msg.content,
+        feedback=msg.feedback,
+        created_at=msg.created_at,
+    )
 
 
 def _save_message(

@@ -3,12 +3,21 @@
 import { create } from "zustand";
 import { api } from "@/lib/api";
 
+export interface SourceBoundingBox {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  unit?: "percent" | "pixels" | "pdf";
+}
+
 export interface SourceChunk {
   text: string;
   filename: string;
   page: number;
   score?: number;
   confidence?: number;
+  highlightRects?: SourceBoundingBox[];
 }
 
 export interface ChatMsg {
@@ -16,6 +25,7 @@ export interface ChatMsg {
   role: "user" | "assistant";
   content: string;
   sources: SourceChunk[];
+  feedback?: "up" | "down" | null;
   isStreaming?: boolean;
 }
 
@@ -32,12 +42,14 @@ interface ChatStore {
   input: string;
   streaming: boolean;
   isTyping: boolean;
+  historyLoading: boolean;
   sessions: ChatSession[];
   activeSessionId: string | null;
   setMessages: (value: Setter<ChatMsg[]>) => void;
   setInput: (value: Setter<string>) => void;
   setStreaming: (value: Setter<boolean>) => void;
   setIsTyping: (value: Setter<boolean>) => void;
+  setHistoryLoading: (value: Setter<boolean>) => void;
   setSessions: (value: Setter<ChatSession[]>) => void;
   setActiveSessionId: (value: Setter<string | null>) => void;
   fetchSessions: () => Promise<void>;
@@ -56,6 +68,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   input: "",
   streaming: false,
   isTyping: false,
+  historyLoading: false,
   sessions: [],
   activeSessionId: null,
 
@@ -73,6 +86,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
   setIsTyping(value) {
     set((state) => ({ isTyping: resolveValue(value, state.isTyping) }));
+  },
+
+  setHistoryLoading(value) {
+    set((state) => ({ historyLoading: resolveValue(value, state.historyLoading) }));
   },
 
   setSessions(value) {
@@ -150,11 +167,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
 
   async fetchSessionHistory(id) {
+    set({ historyLoading: true });
     try {
       const data = await api.get<{ messages: ChatMsg[] }>(`/api/v1/chat/history/session/${id}`);
       set({ messages: data.messages });
     } catch (err) {
       console.error("Failed to fetch session history:", err);
+    } finally {
+      set({ historyLoading: false });
     }
   },
 
@@ -164,6 +184,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       input: "",
       streaming: false,
       isTyping: false,
+      historyLoading: false,
       sessions: [],
       activeSessionId: null,
     });
