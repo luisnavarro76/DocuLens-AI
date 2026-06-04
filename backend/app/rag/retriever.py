@@ -262,33 +262,30 @@ def retrieve(
 
     # ── Stage 2: Cross-encoder reranking ─────────────
     reranker = get_reranker()
-
+    
     if reranker is not None:
-        reranked_chunks = reranker.rerank(
+        top_chunks = reranker.rerank(
             query=query,
             documents=candidates,
             top_k=settings.TOP_K_RERANK
         )
-
-    # If reranking fails or is unavailable, fall back to original candidates sorted by mock score
-    if reranked_chunks:
-        top_chunks = reranked_chunks
     else:
+        # Fall back to hybrid scores (no reranker)
         candidates.sort(key=lambda x: x.get("score", 0), reverse=True)
         top_chunks = candidates[:settings.TOP_K_RERANK]
 
+    # top_chunks is now always defined
     # ── Calculate confidence percentages ─────────────
     if top_chunks:
         max_score = max(
             chunk.get("rerank_score", chunk.get("score", 0))
             for chunk in top_chunks
         )
-        max_score = max(max_score, 0.001)  # Avoid division by zero
+        max_score = max(max_score, 0.001)
 
         for chunk in top_chunks:
             raw = chunk.get("rerank_score", chunk.get("score", 0))
             chunk["confidence"] = round((raw / max_score) * 100, 1)
-            # Clean up internal score
             if "rerank_score" in chunk:
                 chunk["score"] = round(chunk["rerank_score"], 4)
                 del chunk["rerank_score"]
