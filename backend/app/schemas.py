@@ -1,7 +1,7 @@
 """
 Pydantic schemas for API request/response validation.
 """
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, List
 from datetime import datetime
 from app.models import UserRole
@@ -41,7 +41,21 @@ class UpdatePasswordResponse(BaseModel):
     id: str
     username: str
     email: EmailStr
-    password_changed:bool = True
+    password_changed: bool = True
+
+
+class WorkspaceInviteRequest(BaseModel):
+    email: EmailStr
+    workspace_name: str = Field(..., min_length=1, max_length=100)
+    message: Optional[str] = None
+
+
+class WorkspaceInviteResponse(BaseModel):
+    email: EmailStr
+    workspace_name: str
+    invite_link: str
+    expires_in_hours: int
+
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -69,6 +83,7 @@ class GoogleDriveStatusResponse(BaseModel):
 
 class ApiKeyResponse(BaseModel):
     id: str
+    name: str
     key_preview: str
     created_at: datetime
 
@@ -76,8 +91,15 @@ class ApiKeyResponse(BaseModel):
         from_attributes = True
 
 
-class ApiKeyCreateResponse(ApiKeyResponse):
+class ApiKeyCreateResponse(BaseModel):
+    id: str
+    name: str
+    key_preview: str
+    created_at: datetime
     raw_key: str
+
+    class Config:
+        from_attributes = True
 
 
 class UserResponse(BaseModel):
@@ -105,9 +127,22 @@ class DocumentResponse(BaseModel):
     error_message: Optional[str] = None
     uploaded_at: datetime
     summary: Optional[str] = None # New field for document summary
+    task_id: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+
+class DocumentRename(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("Document name cannot be empty")
+        return stripped
 
 
 class DocumentStatusResponse(BaseModel):
@@ -154,6 +189,7 @@ class AdminStatsResponse(BaseModel):
 class ChatRequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=2000)
     document_id: Optional[str] = None
+    document_ids: Optional[List[str]] = None
     session_id: Optional[str] = None
 
 
@@ -171,11 +207,16 @@ class ChatResponse(BaseModel):
     document_id: Optional[str] = None
 
 
+class FeedbackRequest(BaseModel):
+    feedback: Optional[str] = Field(None, pattern="^(up|down)?$")
+
+
 class ChatMessageResponse(BaseModel):
     id: str
     role: str
     content: str
     sources: List[SourceChunk] = []
+    feedback: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -186,6 +227,11 @@ class ChatHistoryResponse(BaseModel):
     messages: List[ChatMessageResponse]
     document_id: Optional[str] = None
 
+# Chunk settings schema for optional chunk size and overlap parameters in document processing
+class ChunkSettings(BaseModel):
+    chunk_size: int | None
+    chunk_overlap: int | None
+      
 class UploadUrl(BaseModel):
     url: str
 
