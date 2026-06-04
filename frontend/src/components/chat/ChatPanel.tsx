@@ -67,6 +67,7 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
   const resetChat = useChatStore((state) => state.resetChat);
   const fetchSessionHistory = useChatStore((state) => state.fetchSessionHistory);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const MAX_CHARACTERS = 2000;
   const [isRecording, setIsRecording] = useState(false);
   const [speechError, setSpeechError] = useState<string | null>(null);
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
@@ -498,6 +499,7 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
               <Textarea
                 ref={textareaRef}
                 id="chat-input"
+                maxLength={MAX_CHARACTERS}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -510,6 +512,15 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
                 className="min-h-[44px] max-h-32 resize-none bg-background/50 border-border/50 pr-10"
                 rows={1}
               />
+              <div
+  className={`text-xs mt-1 text-right ${
+    input.length > MAX_CHARACTERS * 0.9
+      ? "text-orange-500"
+      : "text-muted-foreground"
+  }`}
+>
+  {input.length} / {MAX_CHARACTERS}
+</div>
               <Button
                 id="mic-btn"
                 type="button"
