@@ -9,7 +9,7 @@ from typing import List, Dict, Any, Optional, Generator
 from huggingface_hub import InferenceClient
 from langchain_classic.agents import create_react_agent, AgentExecutor
 from langchain_core.prompts import PromptTemplate
-from langchain_huggingface import HuggingFaceEndpoint
+from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
 
 from app.config import get_settings
 from app.rag.retriever import retrieve
@@ -49,9 +49,11 @@ def get_agent_executor(
         timeout=300,
     )
 
+    chat_llm = ChatHuggingFace(llm=llm)
+
     # Setup Agent
     prompt = PromptTemplate.from_template(AGENT_SYSTEM_PROMPT)
-    agent = create_react_agent(llm, tools, prompt)
+    agent = create_react_agent(chat_llm, tools, prompt)
 
     executor = AgentExecutor(
         agent=agent,
