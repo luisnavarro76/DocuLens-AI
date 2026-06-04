@@ -206,7 +206,7 @@ def _merge_candidates(candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 @trace_function(
     "retrieve",
-    metadata_factory=lambda query, user_id, document_id=None: {
+    metadata_factory=lambda query, user_id, document_id=None, top_k=None: {
         "user_id": user_id,
         "document_id": document_id,
         "embedding_model": settings.EMBEDDING_MODEL,
@@ -219,6 +219,7 @@ def retrieve(
     query: str,
     user_id: str,
     document_id: Optional[str] = None,
+    top_k: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """
     Two-stage retrieval pipeline:
@@ -228,16 +229,17 @@ def retrieve(
     Returns chunks with confidence scores.
     """
     # ── Stage 1: Hybrid Search with Query Transformation ─────────────
+    effective_top_k = top_k if top_k is not None else settings.TOP_K_RETRIEVAL
     vector_retriever = CustomVectorRetriever(
         user_id=user_id,
         document_id=document_id,
-        top_k=settings.TOP_K_RETRIEVAL,
+        top_k=effective_top_k,
     )
 
     bm25_retriever = CustomBM25Retriever(
         user_id=user_id,
         document_id=document_id,
-        top_k=settings.TOP_K_RETRIEVAL,
+        top_k=effective_top_k,
     )
 
     ensemble_retriever = EnsembleRetriever(
