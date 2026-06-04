@@ -264,7 +264,7 @@ class Document(Base):
     drive_synced_at = Column(DateTime, nullable=True)
     is_deleted = Column(Boolean, default=False, nullable=False, index=True)
     deleted_at = Column(DateTime, nullable=True)
-
+    keywords    = Column(Text, nullable=True)   # JSON-encoded list[str]
 
     # Relationships
     owner = relationship("User", back_populates="documents")
