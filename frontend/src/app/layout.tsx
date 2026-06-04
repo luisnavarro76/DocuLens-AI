@@ -5,6 +5,8 @@ import { AuthProvider } from "@/lib/auth";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import I18nProvider from "@/components/providers/I18nProvider";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
+import { SonnerToaster } from "@/components/ui/sonner-toaster";
+
 
 const inter = Inter({
   variable: "--font-sans",
@@ -38,6 +40,7 @@ export default function RootLayout({
               <TooltipProvider>{children}</TooltipProvider>
             </I18nProvider>
           </AuthProvider>
+          <SonnerToaster />
         </ThemeProvider>
       </body>
     </html>
