@@ -262,11 +262,13 @@ def retrieve(
 
     # ── Stage 2: Cross-encoder reranking ─────────────
     reranker = get_reranker()
-    reranked_chunks = reranker.rerank(
-        query=query,
-        documents=candidates,
-        top_k=settings.TOP_K_RERANK
-    ) 
+
+    if reranker is not None:
+        reranked_chunks = reranker.rerank(
+            query=query,
+            documents=candidates,
+            top_k=settings.TOP_K_RERANK
+        )
 
     # If reranking fails or is unavailable, fall back to original candidates sorted by mock score
     if reranked_chunks:
