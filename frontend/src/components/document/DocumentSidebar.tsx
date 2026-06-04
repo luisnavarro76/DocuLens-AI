@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import type { DocInfo } from "@/app/dashboard/page";
 import { api } from "@/lib/api";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
-  FileText, Upload, Trash2, FileCheck, Clock, AlertCircle, Loader2, FolderOpen,
+  FileText, Upload, Trash2, FileCheck, Clock, AlertCircle, Loader2, FolderOpen, Cloud,
 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 
@@ -26,6 +26,30 @@ export default function DocumentSidebar({ documents = [], activeDoc, onSelectDoc
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [driveConnected, setDriveConnected] = useState(false);
+  const [driveLoading, setDriveLoading] = useState(true);
+  const [driveConnecting, setDriveConnecting] = useState(false);
+  const [driveError, setDriveError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDriveStatus() {
+      try {
+        const data = await api.get<{ connected: boolean }>("/api/v1/auth/google-drive/status");
+        if (!cancelled) setDriveConnected(data.connected);
+      } catch {
+        if (!cancelled) setDriveError("Unable to load Google Drive status");
+      } finally {
+        if (!cancelled) setDriveLoading(false);
+      }
+    }
+
+    void loadDriveStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -78,6 +102,33 @@ export default function DocumentSidebar({ documents = [], activeDoc, onSelectDoc
       console.error("Delete failed:", err);
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleConnectDrive = async () => {
+    setDriveConnecting(true);
+    setDriveError("");
+
+    try {
+      const data = await api.get<{ auth_url: string }>("/api/v1/auth/google-drive/connect");
+      window.location.assign(data.auth_url);
+    } catch (err) {
+      setDriveError(err instanceof Error ? err.message : "Failed to connect Google Drive");
+      setDriveConnecting(false);
+    }
+  };
+
+  const handleDisconnectDrive = async () => {
+    setDriveConnecting(true);
+    setDriveError("");
+
+    try {
+      const data = await api.delete<{ connected: boolean }>("/api/v1/auth/google-drive/disconnect");
+      setDriveConnected(data.connected);
+    } catch (err) {
+      setDriveError(err instanceof Error ? err.message : "Failed to disconnect Google Drive");
+    } finally {
+      setDriveConnecting(false);
     }
   };
 
@@ -135,6 +186,37 @@ export default function DocumentSidebar({ documents = [], activeDoc, onSelectDoc
               </p>
             </>
           )}
+        </div>
+
+        <div className="rounded-lg border border-sidebar-border bg-sidebar-accent/30 p-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <Cloud className="w-4 h-4 text-muted-foreground" />
+            <div className="min-w-0">
+              <p className="text-sm font-medium leading-tight">Google Drive</p>
+              <p className="text-xs text-muted-foreground">
+                {driveConnected ? "Connected for PDF sync" : "Connect to import PDFs"}
+              </p>
+            </div>
+          </div>
+          {driveError && (
+            <p className="text-xs text-destructive" role="alert">
+              {driveError}
+            </p>
+          )}
+          <Button
+            variant={driveConnected ? "outline" : "secondary"}
+            size="sm"
+            className="w-full"
+            onClick={driveConnected ? handleDisconnectDrive : handleConnectDrive}
+            disabled={driveLoading || driveConnecting}
+          >
+            {driveConnecting || driveLoading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Cloud className="w-3.5 h-3.5" />
+            )}
+            {driveConnected ? "Disconnect Google Drive" : "Connect Google Drive"}
+          </Button>
         </div>
       </div>
 

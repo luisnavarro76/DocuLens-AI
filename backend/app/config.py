@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     JWT_ACCESS_EXPIRY_MINUTES: int = 15
     JWT_REFRESH_EXPIRY_DAYS: int = 7
     GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_DRIVE_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/google-drive/callback"
 
     # ── File Upload ──────────────────────────────────────
     UPLOAD_DIR: str = "./data/uploads"
