@@ -126,10 +126,15 @@ class User(Base):
         server_default="user",
     )
     is_admin = Column(Boolean, default=False)
+    is_verified = Column(Boolean, default=True, nullable=False, server_default="true")
+    verification_token_hash = Column(String(64), nullable=True, index=True)
+    verification_token_created_at = Column(DateTime, nullable=True)
 
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     last_login = Column(DateTime, nullable=True, index=True)
     hf_token = Column(EncryptedString, nullable=True)
+    display_name = Column(String(120), nullable=True)
+    avatar_url = Column(String(500), nullable=True)
 
     # Relationships
     documents = relationship(
