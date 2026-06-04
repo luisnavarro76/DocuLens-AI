@@ -23,6 +23,20 @@ class Settings(BaseSettings):
     JWT_ACCESS_EXPIRY_MINUTES: int = 15
     JWT_REFRESH_EXPIRY_DAYS: int = 7
     GOOGLE_CLIENT_ID: str = ""
+    HF_CLIENT_ID: str = ""
+    HF_CLIENT_SECRET: str = ""
+    HF_REDIRECT_URI: str = ""
+    FRONTEND_URL: str = "http://localhost:3000"
+
+    # Google Drive background sync
+    DRIVE_SYNC_ENABLED: bool = False
+    DRIVE_SYNC_INTERVAL_MINUTES: int = 60
+    GOOGLE_SERVICE_ACCOUNT_FILE: str = ""
+
+    # Celery / Redis background processing
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/1"
+    CELERY_TASK_TRACK_STARTED: bool = True
 
     # ── File Upload ──────────────────────────────────────
     UPLOAD_DIR: str = "./data/uploads"
@@ -33,7 +47,10 @@ class Settings(BaseSettings):
         ".docx": [
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             "application/zip",
-        ]
+        ],
+        ".txt": ["text/plain"],
+        ".md": ["text/markdown"],
+
     }
 
     # ── RAG Pipeline ─────────────────────────────────────
@@ -41,6 +58,22 @@ class Settings(BaseSettings):
     CHUNK_OVERLAP: int = 200
     TOP_K_RETRIEVAL: int = 10
     TOP_K_RERANK: int = 5
+
+    # ── Knowledge Graph (GraphRAG) ───────────────────────
+    GRAPH_PERSIST_DIR: str = "./data/graphs"
+    GRAPH_ENTITY_LABELS: set = {
+        "PERSON",
+        "ORG",
+        "GPE",
+        "LOC",
+        "PRODUCT",
+        "EVENT",
+        "WORK_OF_ART",
+        "LAW",
+        "NORP",
+        "FAC",
+    }
+    GRAPH_MAX_RELATIONSHIPS: int = 12
 
     # ── Embeddings (local HuggingFace model) ─────────────
     EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
@@ -69,6 +102,14 @@ class Settings(BaseSettings):
     VISION_MODEL: str | None = None
     OPENAI_API_KEY: str = ""
 
+    # ── Workspace Invitation ─────────────────────────
+    APP_URL: str = "http://localhost:3000"
+    INVITE_TOKEN_EXPIRY_HOURS: int = 72
+    EMAIL_FROM: str = "no-reply@example.com"
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 0
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
 
     @property
     def cors_origins(self) -> list[str]:
