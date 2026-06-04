@@ -13,9 +13,9 @@ def test_register_success(client):
 
     assert response.status_code == 201
     payload = response.json()
-    assert payload["access_token"]
-    assert payload["refresh_token"]
-    assert payload["user"]["email"] == "newuser@example.com"
+    assert payload["message"] == "Registration successful. Please check your email to verify your account before logging in."
+    assert payload["email"] == "newuser@example.com"
+    assert payload["verification_url"].startswith("/verify-email?token=")
 
 
 def test_register_duplicate_email_or_username_conflict(client):
@@ -160,7 +160,15 @@ def test_hf_token_appears_in_user_response(client, auth_headers, user, db_sessio
     assert stored_token is not None
     assert stored_token != "hf_persist_token"
 
+def test_update_user_info_rejects_duplicate_email(client, auth_headers, other_user):
+    response = client.put(
+        "/api/v1/auth/update",
+        json={"email": other_user.email},
+        headers=auth_headers,
+    )
 
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Email already exists"
 from unittest.mock import patch, AsyncMock, MagicMock
 import urllib.parse
 

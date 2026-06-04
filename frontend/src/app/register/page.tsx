@@ -22,6 +22,9 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [verificationUrl, setVerificationUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
   const passwordValid = isPasswordValid(password);
@@ -40,17 +43,15 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
-    if (!passwordValid) {
-      setError(t("password.invalidSubmit"));
-      return;
-    }
-
+    setSuccess("");
+    setVerificationUrl("");
     setLoading(true);
 
     try {
-      await register(username, email, password);
-      router.replace("/dashboard");
+      const result = await register(username, email, password);
+      setRegisteredEmail(result.email);
+      setSuccess(result.message);
+      setVerificationUrl(result.verification_url ?? "");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t("register.fallbackError");
       setError(message);
@@ -92,6 +93,19 @@ export default function RegisterPage() {
                 {error}
               </div>
             )}
+            {success && (
+              <div className="p-3 rounded-lg bg-primary/10 border border-primary/30 text-sm text-primary">
+                <p className="font-medium">{t("register.verifyTitle")}</p>
+                <p className="mt-1">
+                  {t("register.verifyMessage", { email: registeredEmail })}
+                </p>
+                {verificationUrl && (
+                  <Link href={verificationUrl} className="inline-flex mt-3 font-medium underline">
+                    {t("register.openVerification")}
+                  </Link>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <label htmlFor="reg-username" className="text-sm font-medium">
@@ -105,6 +119,7 @@ export default function RegisterPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 minLength={3}
+                disabled={Boolean(success)}
                 className="h-11"
               />
             </div>
@@ -120,23 +135,36 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={Boolean(success)}
                 className="h-11"
               />
             </div>
 
-            <PasswordField
-              id="reg-password"
-              value={password}
-              onChange={setPassword}
-              placeholder={t("register.passwordPlaceholder")}
-            />
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("common.password")}</label>
+              <div className="relative">
+                <Input
+                  id="reg-password"
+                  type={showPw ? "text" : "password"}
+                  placeholder={t("register.passwordPlaceholder")}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  disabled={Boolean(success)}
+                  className="h-11 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
 
-            <Button
-              type="submit"
-              className="w-full h-11 text-base"
-              disabled={!canSubmit}
-              aria-disabled={!canSubmit}
-            >
+            <Button type="submit" className="w-full h-11 text-base" disabled={loading || Boolean(success)}>
               {loading ? (
                 <span className="flex items-center gap-2">
                   <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
