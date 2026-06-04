@@ -20,6 +20,19 @@ class UserLogin(BaseModel):
     password: str
 
 
+class EmailVerificationRequest(BaseModel):
+    email: EmailStr
+
+
+class MessageResponse(BaseModel):
+    message: str
+
+
+class RegistrationResponse(MessageResponse):
+    email: EmailStr
+    verification_url: Optional[str] = None
+
+
 class GoogleLoginRequest(BaseModel):
     id_token: str = Field(..., min_length=10)
 
@@ -28,6 +41,9 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     username:Optional[str] = None
 
+class UserProfileUpdate(BaseModel):
+    username: Optional[str] = None
+    display_name: Optional[str] = None
 class UserUpdateResponse(BaseModel):
     id: str
     username: str
@@ -100,7 +116,10 @@ class UserResponse(BaseModel):
     email: str
     role: UserRole
     is_admin: bool
+    is_verified: bool
     hf_token: Optional[str] = None
+    display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -183,6 +202,7 @@ class ChatRequest(BaseModel):
     document_id: Optional[str] = None
     document_ids: Optional[List[str]] = None
     session_id: Optional[str] = None
+    top_k: int = Field(default=5, ge=1, le=20)
 
 
 class SourceChunk(BaseModel):
@@ -191,6 +211,7 @@ class SourceChunk(BaseModel):
     page: int
     score: float
     confidence: float
+    bbox: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
@@ -237,6 +258,10 @@ class ShareAnswerResponse(BaseModel):
 class ShareLinkResponse(BaseModel):
     message_id: str
     share_url: str
+
+
+class FeedbackRequest(BaseModel):
+    feedback: Optional[str] = None
 
 
 # ── Chat Session ──────────────────────────────────────
