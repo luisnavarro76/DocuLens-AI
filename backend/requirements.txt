@@ -70,3 +70,4 @@ pypdf
 reportlab
 # crawl4ai
 ddgs
+redis>=4.6.0
