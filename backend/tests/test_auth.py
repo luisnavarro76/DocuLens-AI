@@ -1,25 +1,28 @@
+VALID_TEST_PASSWORD = "Password1!"
+
+
 def test_register_success(client):
     response = client.post(
         "/api/v1/auth/register",
         json={
             "username": "newuser",
             "email": "newuser@example.com",
-            "password": "password123",
+            "password": VALID_TEST_PASSWORD,
         },
     )
 
     assert response.status_code == 201
     payload = response.json()
-    assert payload["access_token"]
-    assert payload["refresh_token"]
-    assert payload["user"]["email"] == "newuser@example.com"
+    assert payload["message"] == "Registration successful. Please check your email to verify your account before logging in."
+    assert payload["email"] == "newuser@example.com"
+    assert payload["verification_url"].startswith("/verify-email?token=")
 
 
 def test_register_duplicate_email_or_username_conflict(client):
     payload = {
         "username": "dupuser",
         "email": "dup@example.com",
-        "password": "password123",
+        "password": VALID_TEST_PASSWORD,
     }
     first = client.post("/api/v1/auth/register", json=payload)
     assert first.status_code == 201
@@ -37,6 +40,40 @@ def test_register_duplicate_email_or_username_conflict(client):
     )
     assert duplicate_username.status_code == 409
     assert duplicate_username.json()["detail"] == "Username already taken"
+
+
+def test_register_rejects_weak_password(client):
+    response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": "weakpassuser",
+            "email": "weakpass@example.com",
+            "password": "123456",
+        },
+    )
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert isinstance(detail, list)
+    messages = " ".join(item["msg"] for item in detail)
+    assert "uppercase" in messages.lower() or "8 characters" in messages.lower()
+
+
+def test_register_rejects_password_missing_special_character(client):
+    response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": "specialcharuser",
+            "email": "specialchar@example.com",
+            "password": "Password1",
+        },
+    )
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert isinstance(detail, list)
+    messages = " ".join(item["msg"] for item in detail).lower()
+    assert "special character" in messages
 
 
 def test_login_success(client, user):
@@ -123,7 +160,15 @@ def test_hf_token_appears_in_user_response(client, auth_headers, user, db_sessio
     assert stored_token is not None
     assert stored_token != "hf_persist_token"
 
+def test_update_user_info_rejects_duplicate_email(client, auth_headers, other_user):
+    response = client.put(
+        "/api/v1/auth/update",
+        json={"email": other_user.email},
+        headers=auth_headers,
+    )
 
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Email already exists"
 from unittest.mock import patch, AsyncMock, MagicMock
 import urllib.parse
 
