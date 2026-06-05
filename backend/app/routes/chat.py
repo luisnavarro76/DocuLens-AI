@@ -24,6 +24,7 @@ from app.schemas import (
     ChatResponse,
     ChatMessageResponse,
     ChatHistoryResponse,
+    FeedbackRequest,
     ShareAnswerResponse,
     ShareLinkResponse,
     SourceChunk,
@@ -261,16 +262,16 @@ def get_session_history(
     return ChatHistoryResponse(messages=formatted, document_id=None)
 
 
-def generate_answer(question: str, user_id: str, document_id: Optional[str] = None, hf_token: Optional[str] = None):
+def generate_answer(question: str, user_id: str, document_id: Optional[str] = None, hf_token: Optional[str] = None, top_k: Optional[int] = None, chat_history: Optional[list] = None):
     from app.rag.agent import generate_answer as _generate_answer
 
-    return _generate_answer(question=question, user_id=user_id, document_id=document_id, hf_token=hf_token)
+    return _generate_answer(question=question, user_id=user_id, document_id=document_id, hf_token=hf_token, top_k=top_k, chat_history=chat_history)
 
 
-def generate_answer_stream(question: str, user_id: str, document_id: Optional[str] = None, hf_token: Optional[str] = None):
+def generate_answer_stream(question: str, user_id: str, document_id: Optional[str] = None, hf_token: Optional[str] = None, top_k: Optional[int] = None, chat_history: Optional[list] = None):
     from app.rag.agent import generate_answer_stream as _generate_answer_stream
 
-    return _generate_answer_stream(question=question, user_id=user_id, document_id=document_id, hf_token=hf_token)
+    return _generate_answer_stream(question=question, user_id=user_id, document_id=document_id, hf_token=hf_token, top_k=top_k, chat_history=chat_history)
 
 
 @router.post(
@@ -313,7 +314,7 @@ def ask_question(
                     status_code=400,
                     detail=f"Document is still {doc.status}. Please wait for processing to complete.",
                 )
-            
+
             # Update last_accessed_at timestamp
             doc.last_accessed_at = datetime.now(timezone.utc)
             db.commit()
@@ -329,11 +330,27 @@ def ask_question(
                 db.refresh(session)
             session_id = session.id
 
+        # Build chat history from last 6 exchanges
+        recent_messages = (
+            db.query(ChatMessage)
+            .filter(
+                ChatMessage.session_id == session_id,
+                ChatMessage.user_id == user.id,
+            )
+            .order_by(ChatMessage.created_at.desc())
+            .limit(12)
+            .all()
+        )
+        recent_messages.reverse()
+        chat_history = [{"role": m.role, "content": m.content} for m in recent_messages]
+
         result = generate_answer(
             question=payload.question,
             user_id=user.id,
             document_id=payload.document_id,
             hf_token=user.hf_token,
+            top_k=payload.top_k,
+            chat_history=chat_history,
         )
 
         # Save to chat history
@@ -386,7 +403,7 @@ def ask_question_stream(
                 status_code=400,
                 detail=f"Document is still {doc.status}. Please wait for processing to complete.",
             )
-        
+
         # Update last_accessed_at timestamp
         doc.last_accessed_at = datetime.now(timezone.utc)
         db.commit()
@@ -404,6 +421,20 @@ def ask_question_stream(
             db.refresh(session)
         session_id = session.id
 
+    # Build chat history from last 6 exchanges (before saving current message)
+    recent_messages = (
+        db.query(ChatMessage)
+        .filter(
+            ChatMessage.session_id == session_id,
+            ChatMessage.user_id == user.id,
+        )
+        .order_by(ChatMessage.created_at.desc())
+        .limit(12)
+        .all()
+    )
+    recent_messages.reverse()
+    chat_history = [{"role": m.role, "content": m.content} for m in recent_messages]
+
     # Save user message immediately
     _save_message(db, user.id, payload.document_id, "user", payload.question, session_id=session_id)
 
@@ -418,6 +449,8 @@ def ask_question_stream(
                 user_id=user.id,
                 document_id=payload.document_id,
                 hf_token=user.hf_token,
+                top_k=payload.top_k,
+                chat_history=chat_history,
             ):
                 yield chunk
 
@@ -489,6 +522,7 @@ def get_chat_history(
             role=msg.role,
             content=msg.content,
             sources=sources,
+            feedback=msg.feedback,
             created_at=msg.created_at,
         ))
 
@@ -512,20 +546,18 @@ def export_chat_history(
     """Export the chat history for a document as a downloadable file."""
     from app.auth import decode_token as _decode
 
-    # Resolve user from query-param token (browser download links can't set headers)
     resolved_user = None
     if token:
         user_id = _decode(token)
         if user_id:
             resolved_user = db.query(User).filter(User.id == user_id).first()
-    
+
     if resolved_user is None:
         raise HTTPException(status_code=401, detail="Authentication required")
 
     if format not in ("md", "txt", "pdf"):
         raise HTTPException(status_code=400, detail="Format must be 'md', 'txt', or 'pdf'")
 
-    # Verify document exists and belongs to user
     doc = db.query(Document).filter(
         Document.id == document_id,
         Document.user_id == resolved_user.id,
@@ -592,6 +624,37 @@ def clear_chat_history(
     db.commit()
 
     return {"message": "Chat history cleared"}
+
+
+@router.patch("/feedback/{message_id}")
+def submit_feedback(
+    message_id: str,
+    payload: FeedbackRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Submit thumbs up/down feedback for an assistant message."""
+    msg = db.query(ChatMessage).filter(
+        ChatMessage.id == message_id,
+        ChatMessage.user_id == user.id,
+    ).first()
+
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    if msg.role != "assistant":
+        raise HTTPException(status_code=400, detail="Can only provide feedback on assistant messages")
+
+    msg.feedback = payload.feedback
+    db.commit()
+    db.refresh(msg)
+
+    return ChatMessageResponse(
+        id=msg.id,
+        role=msg.role,
+        content=msg.content,
+        feedback=msg.feedback,
+        created_at=msg.created_at,
+    )
 
 
 def _save_message(
