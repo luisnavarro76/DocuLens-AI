@@ -22,6 +22,7 @@ from app.database import init_db, get_db
 from app.observability import setup_prometheus_metrics
 from app.rag.vectorstore import get_chroma_client
 from app.scheduler import start_scheduler, stop_scheduler
+from app.routes.profile import router as profile_router
 
 # Configure logging
 logging.basicConfig(
@@ -164,12 +165,14 @@ from app.routes.documents import router as documents_router
 from app.routes.chat import router as chat_router
 from app.routes.github import router as github_router
 from app.routes.admin import router as admin_router
+from app.routes.workspaces import router as workspaces_router
 
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(documents_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(github_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
+app.include_router(workspaces_router, prefix="/api/v1")
 
 setup_prometheus_metrics(app)
 
@@ -214,7 +217,15 @@ def db_health():
     }
 
 # ── Serve Next.js Frontend (production) ──────────────
-FRONTEND_BUILD_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "out")
+# In local development, frontend build is at ../../frontend/out relative to backend/app/main.py
+# In Docker container (where app is copied to /app/app), frontend build is at /app/frontend/out (which is ../frontend/out relative to /app/app/main.py)
+_local_build_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "out"))
+_docker_build_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend", "out"))
+
+if os.path.exists(_docker_build_dir):
+    FRONTEND_BUILD_DIR = _docker_build_dir
+else:
+    FRONTEND_BUILD_DIR = _local_build_dir
 
 if os.path.exists(FRONTEND_BUILD_DIR):
     # Serve static assets (JS, CSS, images)
@@ -264,38 +275,4 @@ else:
             "docs": "/docs",
             "health": "/api/health",
         }
-@app.route("/download/<username>/<filename>")
-@login_required
-def download_file(username, filename):
-    user_folder = get_user_upload_folder(username)
-    
-    # Secure validation check injected directly here
-    secure_filepath = verify_secure_sandbox_path(filename, user_folder)
-        
-    if not secure_filepath.exists():
-        return "File not found", 404
-        
-    return send_file(str(secure_filepath), as_attachment=True)
-
-
-@app.route("/delete", methods=["POST"])
-@login_required
-def delete():
-    data = request.get_json()
-    filename = data.get("filename", "")
-    
-    if not filename:
-        return jsonify({"error": "Filename not provided"}), 400
-        
-    folder = get_user_upload_folder(current_user.username)
-    
-    # Secure validation check injected directly here
-    secure_filepath = verify_secure_sandbox_path(filename, folder)
-
-    if not secure_filepath.exists():
-        return jsonify({"error": "File not found"}), 404
-
-    os.remove(str(secure_filepath))
-    delete_embeddings(filename, current_user)
-
-    return jsonify({"message": f"{filename} deleted successfully!"}), 200
+app.include_router(profile_router)
