@@ -3,14 +3,17 @@ Auth API routes — register, login, and user profile.
 """
 import re
 import secrets
+import logging
+import hashlib
 from html import escape
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, timedelta, timezone
 
 import httpx
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Query, status, Cookie, Response, Body
 from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
 from google_auth_oauthlib.flow import Flow
 from langsmith import expect
 from sqlalchemy.exc import SQLAlchemyError
