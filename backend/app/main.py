@@ -23,6 +23,7 @@ from app.database import init_db, get_db
 from app.observability import setup_prometheus_metrics
 from app.rag.vectorstore import get_chroma_client
 from app.scheduler import start_scheduler, stop_scheduler
+from app.routes.profile import router as profile_router
 
 # Configure logging
 logging.basicConfig(
@@ -297,3 +298,4 @@ else:
             "docs": "/docs",
             "health": "/api/health",
         }
+app.include_router(profile_router)
