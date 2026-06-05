@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import type { DocInfo } from "@/app/dashboard/page";
@@ -73,6 +74,7 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
   const fetchSessionHistory = useChatStore((state) => state.fetchSessionHistory);
   
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const MAX_CHARACTERS = 2000;
   const [isRecording, setIsRecording] = useState(false);
   const [speechError, setSpeechError] = useState<string | null>(null);
   
@@ -241,6 +243,7 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
         }
       }
     } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
       setIsTyping(false);
       setMessages((prev) =>
         prev.map((m) =>
@@ -248,14 +251,21 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
             ? {
                 ...m,
                 content: t("chat.fallbackError", {
-                  message: err instanceof Error ? err.message : "Unknown error",
+                  message,
                 }),
                 isStreaming: false,
               }
             : m
         )
       );
+
+      if (message.toLowerCase().includes("connect") || message.toLowerCase().includes("network")) {
+        toast.error("Network error. Please check your connection.");
+      } else {
+          toast.error(`Upload failed: ${message}`);
+      }
     } finally {
+
       setStreaming(false);
       setIsTyping(false);
     }
@@ -266,8 +276,9 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
     try {
       await api.delete(`/api/v1/chat/history/${activeDoc.id}`);
       setMessages([]);
+      toast.info("Chat history cleared");
     } catch {
-        //silent fail
+      // silent fail preserved; no additional toast for this scenario
     }
   };
 
@@ -550,6 +561,7 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
               <Textarea
                 ref={textareaRef}
                 id="chat-input"
+                maxLength={MAX_CHARACTERS}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
