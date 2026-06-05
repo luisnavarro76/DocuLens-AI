@@ -23,10 +23,22 @@ class Settings(BaseSettings):
     JWT_ACCESS_EXPIRY_MINUTES: int = 15
     JWT_REFRESH_EXPIRY_DAYS: int = 7
     GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_DRIVE_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/google-drive/callback"
     HF_CLIENT_ID: str = ""
     HF_CLIENT_SECRET: str = ""
     HF_REDIRECT_URI: str = ""
     FRONTEND_URL: str = "http://localhost:3000"
+    EMAIL_VERIFICATION_TOKEN_EXPIRE_HOURS: int = 24
+
+    # ── Email verification ───────────────────────────────
+    MAIL_USERNAME: str = ""
+    MAIL_PASSWORD: str = ""
+    MAIL_FROM: str = ""
+    MAIL_SERVER: str = ""
+    MAIL_PORT: int = 587
+    MAIL_STARTTLS: bool = True
+    MAIL_SSL_TLS: bool = False
 
     # Google Drive background sync
     DRIVE_SYNC_ENABLED: bool = False
@@ -40,7 +52,7 @@ class Settings(BaseSettings):
 
     # ── File Upload ──────────────────────────────────────
     UPLOAD_DIR: str = "./data/uploads"
-    MAX_UPLOAD_SIZE_MB: int = 20
+    MAX_UPLOAD_SIZE_MB: int = 50
     ALLOWED_EXTENSIONS: set = {"pdf", "docx", "txt", "md"}
     ALLOWED_MIME_TYPES: dict = {
         ".pdf": ["application/pdf"],
