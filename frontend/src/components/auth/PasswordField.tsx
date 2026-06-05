@@ -24,6 +24,7 @@ interface PasswordFieldProps {
   showStrength?: boolean;
   autoComplete?: string;
   "aria-describedby"?: string;
+  disabled?: boolean;
 }
 
 const RULE_LABEL_KEYS: Record<PasswordRuleId, string> = {
@@ -44,6 +45,7 @@ export function PasswordField({
   showStrength = true,
   autoComplete = "new-password",
   "aria-describedby": ariaDescribedBy,
+  disabled,
 }: PasswordFieldProps) {
   const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
@@ -75,6 +77,7 @@ export function PasswordField({
             type="button"
             className="text-muted-foreground hover:text-foreground transition-colors"
             aria-label={t("password.requirementsHelp")}
+            disabled={disabled}
           >
             <CircleHelp className="w-3.5 h-3.5" />
           </TooltipTrigger>
@@ -103,12 +106,14 @@ export function PasswordField({
           aria-describedby={describedBy || undefined}
           aria-invalid={touched && !rules.every((rule) => rule.passed) ? true : undefined}
           className="h-11 pr-10"
+          disabled={disabled}
         />
         <button
           type="button"
           onClick={() => setShowPassword((current) => !current)}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
           aria-label={showPassword ? t("password.hidePassword") : t("password.showPassword")}
+          disabled={disabled}
         >
           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
         </button>

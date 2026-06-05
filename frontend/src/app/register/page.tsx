@@ -140,29 +140,13 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">{t("common.password")}</label>
-              <div className="relative">
-                <Input
-                  id="reg-password"
-                  type={showPw ? "text" : "password"}
-                  placeholder={t("register.passwordPlaceholder")}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  disabled={Boolean(success)}
-                  className="h-11 pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
+            <PasswordField
+              id="reg-password"
+              value={password}
+              onChange={setPassword}
+              placeholder={t("register.passwordPlaceholder")}
+              disabled={Boolean(success)}
+            />
 
             <Button type="submit" className="w-full h-11 text-base" disabled={loading || Boolean(success)}>
               {loading ? (
