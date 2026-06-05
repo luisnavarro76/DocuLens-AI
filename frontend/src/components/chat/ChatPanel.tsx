@@ -73,6 +73,7 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
   const fetchSessionHistory = useChatStore((state) => state.fetchSessionHistory);
   
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const MAX_CHARACTERS = 2000;
   const [isRecording, setIsRecording] = useState(false);
   const [speechError, setSpeechError] = useState<string | null>(null);
   
@@ -550,6 +551,7 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
               <Textarea
                 ref={textareaRef}
                 id="chat-input"
+                maxLength={MAX_CHARACTERS}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
