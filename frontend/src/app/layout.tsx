@@ -33,12 +33,12 @@ export default function RootLayout({
           defaultTheme="dark"
           enableSystem={false}
           disableTransitionOnChange
+          themes={["light", "dark", "ocean", "forest", "sunset"]}
         >
           <AuthProvider>
             <I18nProvider>
               <TooltipProvider>
                 {children}
-                <Toaster richColors position="top-right" closeButton />
               </TooltipProvider>
             </I18nProvider>
           </AuthProvider>

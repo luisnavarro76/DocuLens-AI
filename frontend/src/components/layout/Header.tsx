@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,12 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import {
   Brain,
@@ -20,12 +27,14 @@ import {
   PanelRightClose,
   PanelRightOpen,
   LogOut,
-  Moon,
-  Sun,
   Menu,
   X,
+  Palette,
+  Briefcase,
+  ChevronDown,
+  Sun,
+  Moon
 } from "lucide-react";
-import { Briefcase, ChevronDown } from "lucide-react";
 import { useWorkspaceStore, WORKSPACES, type WorkspaceId } from "@/store/workspace-store";
 import { api } from "@/lib/api";
 import { useTheme } from "next-themes";
@@ -71,14 +80,10 @@ export default function Header({
   };
 
   const fetchDocumentsForWorkspace = async (id: string) => {
-    // Placeholder: simulate fetching documents for the selected workspace
     setWorkspaceLoading(true);
     try {
-      // Attempt a real API call if available; otherwise this will fail silently
       const res = await api.get(`/api/v1/documents?workspace=${encodeURIComponent(id)}`).catch(() => null);
       console.log("workspace change, fetched documents:", res);
-      // Here you would dispatch the results into your document store or context
-      // e.g. documentStore.setDocuments(res || [])
     } catch (err) {
       console.warn("Failed to fetch documents for workspace", id, err);
     } finally {
@@ -122,12 +127,17 @@ export default function Header({
             )}
           </Button>
 
-          <div className="flex items-center gap-2">
+          {/* LOGO — clicking navigates to dashboard */}
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 hover:opacity-75 transition-opacity cursor-pointer"
+            aria-label="Go to homepage"
+          >
             <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
               <Brain className="w-4 h-4 text-primary" />
             </div>
             <span className="font-semibold text-sm hidden sm:inline">Document AI Analyst</span>
-          </div>
+          </Link>
         </div>
 
         {/* Right */}
@@ -203,7 +213,7 @@ export default function Header({
               aria-label={`Open user menu for ${user?.username ?? "current user"}`}
             >
               <Avatar className="w-6 h-6">
-                <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
+                <AvatarFallback className="text-[10px] bg-primary text-primary-foreground">
                   {user?.username?.slice(0, 2).toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
@@ -224,7 +234,7 @@ export default function Header({
         </div>
       </header>
 
-      {/* Mobile navigation sheet */}
+      {/* Mobile navigation sheet - backdrop */}
       {sheetOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
@@ -246,12 +256,18 @@ export default function Header({
         inert={!sheetOpen ? true : undefined}
       >
         <div className="h-14 flex items-center justify-between px-4 border-b border-sidebar-border flex-shrink-0">
-          <div className="flex items-center gap-2">
+          {/* MOBILE LOGO — clicking navigates to dashboard and closes the sheet */}
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 hover:opacity-75 transition-opacity cursor-pointer"
+            aria-label="Go to homepage"
+            onClick={() => setSheetOpen(false)}
+          >
             <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
               <Brain className="w-4 h-4 text-primary" />
             </div>
             <span className="font-semibold text-sm">Document AI Analyst</span>
-          </div>
+          </Link>
           <Button
             variant="ghost"
             size="icon"

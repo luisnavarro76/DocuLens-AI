@@ -6,7 +6,8 @@ import os
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
@@ -22,6 +23,7 @@ from app.database import init_db, get_db
 from app.observability import setup_prometheus_metrics
 from app.rag.vectorstore import get_chroma_client
 from app.scheduler import start_scheduler, stop_scheduler
+from app.routes.profile import router as profile_router
 
 # Configure logging
 logging.basicConfig(
@@ -146,6 +148,28 @@ app.add_exception_handler(
         content={"detail": "Rate limit exceeded. Please try again later."},
     ),
 )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    def _sanitize_error(err):
+        if isinstance(err, dict):
+            sanitized = {}
+            for k, v in err.items():
+                if k == "ctx" and isinstance(v, dict) and "error" in v:
+                    ctx_error = v.get("error")
+                    if isinstance(ctx_error, Exception):
+                        v = {**v, "error": str(ctx_error)}
+                sanitized[k] = _sanitize_error(v)
+            return sanitized
+        if isinstance(err, list):
+            return [_sanitize_error(i) for i in err]
+        return err
+
+    return JSONResponse(
+        status_code=422,
+        content={"detail": [_sanitize_error(e) for e in exc.errors()]},
+    )
+
 app.add_middleware(SlowAPIMiddleware)
 
 # ── CORS (allow frontend dev server) ─────────────────
@@ -164,12 +188,14 @@ from app.routes.documents import router as documents_router
 from app.routes.chat import router as chat_router
 from app.routes.github import router as github_router
 from app.routes.admin import router as admin_router
+from app.routes.workspaces import router as workspaces_router
 
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(documents_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(github_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
+app.include_router(workspaces_router, prefix="/api/v1")
 
 setup_prometheus_metrics(app)
 
@@ -214,7 +240,15 @@ def db_health():
     }
 
 # ── Serve Next.js Frontend (production) ──────────────
-FRONTEND_BUILD_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "out")
+# In local development, frontend build is at ../../frontend/out relative to backend/app/main.py
+# In Docker container (where app is copied to /app/app), frontend build is at /app/frontend/out (which is ../frontend/out relative to /app/app/main.py)
+_local_build_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "out"))
+_docker_build_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend", "out"))
+
+if os.path.exists(_docker_build_dir):
+    FRONTEND_BUILD_DIR = _docker_build_dir
+else:
+    FRONTEND_BUILD_DIR = _local_build_dir
 
 if os.path.exists(FRONTEND_BUILD_DIR):
     # Serve static assets (JS, CSS, images)
@@ -264,3 +298,4 @@ else:
             "docs": "/docs",
             "health": "/api/health",
         }
+app.include_router(profile_router)
