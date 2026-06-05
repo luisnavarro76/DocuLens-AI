@@ -264,3 +264,38 @@ else:
             "docs": "/docs",
             "health": "/api/health",
         }
+@app.route("/download/<username>/<filename>")
+@login_required
+def download_file(username, filename):
+    user_folder = get_user_upload_folder(username)
+    
+    # Secure validation check injected directly here
+    secure_filepath = verify_secure_sandbox_path(filename, user_folder)
+        
+    if not secure_filepath.exists():
+        return "File not found", 404
+        
+    return send_file(str(secure_filepath), as_attachment=True)
+
+
+@app.route("/delete", methods=["POST"])
+@login_required
+def delete():
+    data = request.get_json()
+    filename = data.get("filename", "")
+    
+    if not filename:
+        return jsonify({"error": "Filename not provided"}), 400
+        
+    folder = get_user_upload_folder(current_user.username)
+    
+    # Secure validation check injected directly here
+    secure_filepath = verify_secure_sandbox_path(filename, folder)
+
+    if not secure_filepath.exists():
+        return jsonify({"error": "File not found"}), 404
+
+    os.remove(str(secure_filepath))
+    delete_embeddings(filename, current_user)
+
+    return jsonify({"message": f"{filename} deleted successfully!"}), 200
