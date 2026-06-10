@@ -6,7 +6,7 @@ import uuid
 from pathlib import Path
 
 import pytest
-from fastapi import UploadFile
+from fastapi import UploadFile, HTTPException
 from app.exceptions import ValidationException
 from pypdf import PdfWriter
 from sqlalchemy import create_engine

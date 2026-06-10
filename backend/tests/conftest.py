@@ -90,6 +90,32 @@ from app.main import app
 from app.models import ChatMessage, Document, User
 
 
+@pytest.fixture(autouse=True)
+def fake_magic(monkeypatch):
+    import sys
+    import types
+    from pathlib import Path
+
+    def fake_from_file(filename, mime=True):
+        ext = Path(filename).suffix.lower()
+        if ext == ".pdf":
+            return "application/pdf"
+        elif ext == ".docx":
+            return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        elif ext == ".txt":
+            return "text/plain"
+        elif ext == ".md":
+            return "text/markdown"
+        return "application/octet-stream"
+
+    # Mock magic module for all tests
+    monkeypatch.setitem(
+        sys.modules,
+        "magic",
+        types.SimpleNamespace(from_file=fake_from_file),
+    )
+
+
 @pytest.fixture()
 def db_session(tmp_path):
     db_file = tmp_path / "test.db"

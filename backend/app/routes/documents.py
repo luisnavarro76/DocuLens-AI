@@ -16,7 +16,7 @@ import socket
 import ipaddress
 import tempfile
 from urllib.parse import urlparse
-from fastapi import APIRouter, Depends, UploadFile, File, status, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, UploadFile, File, status, Query, BackgroundTasks, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
