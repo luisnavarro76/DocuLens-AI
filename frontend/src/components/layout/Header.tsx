@@ -253,8 +253,7 @@ export default function Header({
         ].join(" ")}
         aria-label="Mobile navigation"
         aria-hidden={!sheetOpen}
-        // inert must be an empty string in React JSX — not boolean true
-        {...(!sheetOpen ? { inert: "" } : {})}
+        {...(!sheetOpen ? { inert: true } : {})}
       >
         <div className="h-14 flex items-center justify-between px-4 border-b border-sidebar-border flex-shrink-0">
           {/* MOBILE LOGO — clicking navigates to dashboard and closes the sheet */}

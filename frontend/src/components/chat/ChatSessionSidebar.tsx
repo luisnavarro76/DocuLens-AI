@@ -270,8 +270,7 @@ export default function ChatSessionSidebar() {
         )}
         aria-label="Chat sessions"
         aria-hidden={!mobileOpen}
-        // inert must be an empty string in React JSX — not boolean true
-        {...(!mobileOpen ? { inert: "" } : {})}
+        {...(!mobileOpen ? { inert: true } : {})}
       >
         {sessionsContent(true)}
       </aside>
