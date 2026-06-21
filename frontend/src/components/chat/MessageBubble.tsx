@@ -318,6 +318,11 @@ export default function MessageBubble({ message }: Props) {
                 >
                   <ThumbsDown className="w-3.5 h-3.5" />
                 </button>
+                {message.response_time_ms && (
+                  <span className="text-[10px] text-muted-foreground ml-auto">
+                    ⚡ {(message.response_time_ms / 1000).toFixed(1)}s
+                  </span>
+                )}
               </div>
             )}
           </>

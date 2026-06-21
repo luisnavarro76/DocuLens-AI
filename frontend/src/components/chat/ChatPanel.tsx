@@ -235,7 +235,7 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
         } else if (event.type === "done") {
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === assistantId ? { ...m, isStreaming: false } : m
+              m.id === assistantId ? { ...m, isStreaming: false, response_time_ms: event.response_time_ms } : m
             )
           );
         }
