@@ -13,7 +13,7 @@ export default function OpenSourceBadge({ onOpenHallOfFame }: Props) {
   const [hasAnimated, setHasAnimated] = useState(false);
 
   useEffect(() => {
-    fetch("https://api.github.com/repos/param20h/PDF-Assistant-RAG")
+    fetch("https://api.github.com/repos/luisnavarro76/DocuLens-AI")
       .then((r) => r.json())
       .then((d) => setStars(d.stargazers_count ?? null))
       .catch(() => { });
@@ -46,7 +46,7 @@ export default function OpenSourceBadge({ onOpenHallOfFame }: Props) {
           {/* Actions */}
           <div className="p-3 flex flex-col gap-2">
             <a
-              href="https://github.com/param20h/PDF-Assistant-RAG"
+              href="https://github.com/luisnavarro76/DocuLens-AI"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/50 hover:bg-accent transition-colors group"
@@ -61,7 +61,7 @@ export default function OpenSourceBadge({ onOpenHallOfFame }: Props) {
             </a>
 
             <a
-              href="https://github.com/param20h/PDF-Assistant-RAG/fork"
+              href="https://github.com/luisnavarro76/DocuLens-AI/fork"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 hover:bg-accent transition-colors text-xs"

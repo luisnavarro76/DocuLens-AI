@@ -1,4 +1,4 @@
-# Contributing to PDF-Assistant-RAG 🤝
+# Contributing to DocuLens-AI 🤝
 
 Welcome! This project is open for contributions.
 Read this guide fully before opening a PR — it keeps things smooth for everyone.
@@ -26,14 +26,14 @@ Read this guide fully before opening a PR — it keeps things smooth for everyon
 
 ```bash
 # Fork on GitHub, then:
-git clone https://github.com/<your-username>/PDF-Assistant-RAG.git
-cd PDF-Assistant-RAG
+git clone https://github.com/<your-username>/DocuLens-AI.git
+cd DocuLens-AI
 ```
 
 ### 2. Add upstream remote
 
 ```bash
-git remote add upstream https://github.com/param20h/PDF-Assistant-RAG.git
+git remote add upstream https://github.com/luisnavarro76/DocuLens-AI.git
 ```
 
 ### 3. Always branch from `dev`
@@ -143,7 +143,7 @@ When SMTP is not configured in a non-production environment, registration return
 4. **Push and open a PR targeting `dev`**
 5. **Fill in the PR template** completely
 6. **Wait for CI to pass** — the `CI — Dev Branch` workflow must be green
-7. **Address review feedback** — the admin (@param20h) is auto-assigned as reviewer
+7. **Address review feedback** — the admin (@luisnavarro76) is auto-assigned as reviewer
 
 ### Commit Message Format
 
@@ -205,4 +205,4 @@ All checks must be green before your PR can be merged.
 
 ## 💬 Need Help?
 
-Open a [Discussion](https://github.com/param20h/PDF-Assistant-RAG/discussions) before opening an issue if you're unsure. Mentors and the admin check discussions regularly.
+Open a [Discussion](https://github.com/luisnavarro76/DocuLens-AI/discussions) before opening an issue if you're unsure. Mentors and the admin check discussions regularly.

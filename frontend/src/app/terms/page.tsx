@@ -20,7 +20,7 @@ const sections = [
     content: (
       <>
         <p>
-          By accessing or using PDF-Assistant-RAG (&ldquo;the Platform&rdquo;), you agree to be
+          By accessing or using DocuLens-AI (&ldquo;the Platform&rdquo;), you agree to be
           bound by these Terms of Service (&ldquo;Terms&rdquo;). If you do not agree to all terms,
           you must not use the Platform.
         </p>
@@ -39,7 +39,7 @@ const sections = [
     content: (
       <>
         <p>
-          PDF-Assistant-RAG is an open-source document analysis platform that allows users to upload
+          DocuLens-AI is an open-source document analysis platform that allows users to upload
           documents (PDF, DOCX, TXT, Markdown) and interact with them through AI-powered semantic
           search and chat, using Retrieval-Augmented Generation (RAG) and open-source large language
           models (LLMs).
@@ -196,7 +196,7 @@ const sections = [
             the MIT License.
           </li>
           <li>
-            The name &ldquo;PDF-Assistant-RAG,&rdquo; its logo, and branding elements may not be
+            The name &ldquo;DocuLens-AI,&rdquo; its logo, and branding elements may not be
             used without explicit permission.
           </li>
           <li>
@@ -293,31 +293,31 @@ const sections = [
           <li>
             <strong>GitHub Issues:</strong>{" "}
             <a
-              href="https://github.com/param20h/PDF-Assistant-RAG/issues"
+              href="https://github.com/luisnavarro76/DocuLens-AI/issues"
               target="_blank"
               rel="noopener noreferrer"
             >
-              github.com/param20h/PDF-Assistant-RAG/issues
+              github.com/luisnavarro76/DocuLens-AI/issues
             </a>
           </li>
           <li>
             <strong>GitHub Discussions:</strong>{" "}
             <a
-              href="https://github.com/param20h/PDF-Assistant-RAG/discussions"
+              href="https://github.com/luisnavarro76/DocuLens-AI/discussions"
               target="_blank"
               rel="noopener noreferrer"
             >
-              github.com/param20h/PDF-Assistant-RAG/discussions
+              github.com/luisnavarro76/DocuLens-AI/discussions
             </a>
           </li>
           <li>
             <strong>LinkedIn:</strong>{" "}
             <a
-              href="https://www.linkedin.com/in/param20h/"
+              href="https://www.linkedin.com/in/luisnavarro76/"
               target="_blank"
               rel="noopener noreferrer"
             >
-              linkedin.com/in/param20h
+              linkedin.com/in/luisnavarro76
             </a>
           </li>
         </ul>
@@ -359,7 +359,7 @@ export default function TermsPage() {
             Terms of Service
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            The rules and guidelines for using PDF-Assistant-RAG, our open-source document
+            The rules and guidelines for using DocuLens-AI, our open-source document
             analysis platform.
           </p>
           <p className="mt-4 text-sm text-muted-foreground">
@@ -414,7 +414,7 @@ export default function TermsPage() {
           <p className="text-sm text-muted-foreground">
             Have questions?{" "}
             <a
-              href="https://github.com/param20h/PDF-Assistant-RAG/discussions"
+              href="https://github.com/luisnavarro76/DocuLens-AI/discussions"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline"

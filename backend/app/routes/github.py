@@ -12,7 +12,7 @@ CACHE = {
 }
 TTL = 3600  # 1 hour cache to avoid 403 Rate Limit
 
-REPO = "param20h/PDF-Assistant-RAG"
+REPO = "luisnavarro76/DocuLens-AI"
 
 
 def fetch_github(url: str, cache_key: str):
@@ -35,7 +35,7 @@ def fetch_github(url: str, cache_key: str):
 
     req = urllib.request.Request(url, headers={
         "Accept": "application/vnd.github.v3+json",
-        "User-Agent": "PDF-Assistant-RAG"
+        "User-Agent": "DocuLens-AI"
     })
 
     try:
@@ -60,7 +60,7 @@ def fetch_github(url: str, cache_key: str):
     summary="Get public GitHub repository statistics",
     description=(
         "Returns cached contributor and repository counters for the public "
-        "PDF-Assistant-RAG repository. The endpoint does not require user "
+        "DocuLens-AI repository. The endpoint does not require user "
         "authentication because it only exposes public GitHub metadata."
     ),
 )

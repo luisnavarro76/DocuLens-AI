@@ -1,6 +1,6 @@
 # Discord RAG Bot
 
-This bot connects to the PDF-Assistant-RAG backend to answer questions based on your uploaded documents, directly from Discord.
+This bot connects to the DocuLens-AI backend to answer questions based on your uploaded documents, directly from Discord.
 
 ## Setup
 
@@ -14,7 +14,7 @@ This bot connects to the PDF-Assistant-RAG backend to answer questions based on 
    - Copy the bot token.
    - Invite the bot to your server via the OAuth2 URL Generator (check `bot` scope and `Send Messages` permission).
 
-3. Generate an API Key from your PDF-Assistant-RAG profile dashboard.
+3. Generate an API Key from your DocuLens-AI profile dashboard.
 
 4. Set the environment variables and run:
    ```bash

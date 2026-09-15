@@ -1,6 +1,6 @@
 # Architecture Guide
 
-This guide gives contributors a map of the PDF-Assistant-RAG runtime before
+This guide gives contributors a map of the DocuLens-AI runtime before
 they change an endpoint, storage model, or RAG step. The README keeps the
 product overview; this page focuses on how requests move through the system.
 

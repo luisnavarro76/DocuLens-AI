@@ -134,7 +134,7 @@ class Settings(BaseSettings):
     LANGSMITH_TRACING: bool = False
     LANGSMITH_API_KEY: str = ""
     LANGSMITH_ENDPOINT: str = "https://api.smith.langchain.com"
-    LANGSMITH_PROJECT: str = "pdf-assistant-rag"
+    LANGSMITH_PROJECT: str = "doculens-ai"
 
     # ── Reranker ─────────────────────────────────────────
     RERANKER_MODEL: str = "BAAI/bge-reranker-v2-m3" # Lightweight 384-dim model fine-tuned for relevance ranking
@@ -164,7 +164,7 @@ class Settings(BaseSettings):
         origins = [
             "http://localhost:3000",
             "http://127.0.0.1:3000",
-            "https://pdf-assistant-rag.vercel.app",
+            "https://doculens-ai.vercel.app",
         ]
         if self.ALLOWED_ORIGINS:
             for o in self.ALLOWED_ORIGINS.split(","):

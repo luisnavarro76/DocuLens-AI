@@ -1,5 +1,5 @@
 """
-Response caching utility for PDF-Assistant-RAG.
+Response caching utility for DocuLens-AI.
 
 Supports two backends:
 - Redis (preferred, for production)

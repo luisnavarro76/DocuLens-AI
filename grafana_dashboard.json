@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "System monitoring dashboard for PDF-Assistant-RAG covering API latency, LLM token usage, active users, request volume, error rate, and backend memory.",
+  "description": "System monitoring dashboard for DocuLens-AI covering API latency, LLM token usage, active users, request volume, error rate, and backend memory.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -950,7 +950,7 @@
   "schemaVersion": 39,
   "style": "dark",
   "tags": [
-    "pdf-assistant-rag",
+    "doculens-ai",
     "fastapi",
     "prometheus",
     "llm",
@@ -1018,8 +1018,8 @@
     ]
   },
   "timezone": "browser",
-  "title": "PDF-Assistant-RAG System Monitoring",
-  "uid": "pdf-assistant-rag-system-monitoring",
+  "title": "DocuLens-AI System Monitoring",
+  "uid": "doculens-ai-system-monitoring",
   "version": 1,
   "weekStart": ""
 }

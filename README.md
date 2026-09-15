@@ -1,5 +1,5 @@
 ---
-title: Document AI Analyst
+title: DocuLens AI
 emoji: 🧠
 colorFrom: indigo
 colorTo: purple
@@ -15,19 +15,12 @@ short_description: Enterprise Agentic RAG — upload PDFs and chat with AI
 <br/>
 
 ```
-██████╗ ██████╗ ███████╗     █████╗ ███████╗███████╗██╗███████╗████████╗ █████╗ ███╗   ██╗████████╗
-██╔══██╗██╔══██╗██╔════╝    ██╔══██╗██╔════╝██╔════╝██║██╔════╝╚══██╔══╝██╔══██╗████╗  ██║╚══██╔══╝
-██████╔╝██║  ██║█████╗      ███████║███████╗███████╗██║███████╗   ██║   ███████║██╔██╗ ██║   ██║
-██╔═══╝ ██║  ██║██╔══╝      ██╔══██║╚════██║╚════██║██║╚════██║   ██║   ██╔══██║██║╚██╗██║   ██║
-██║     ██████╔╝██║         ██║  ██║███████║███████║██║███████║   ██║   ██║  ██║██║ ╚████║   ██║
-╚═╝     ╚═════╝ ╚═╝         ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝
-
-                        ██████╗  █████╗  ██████╗
-                        ██╔══██╗██╔══██╗██╔════╝
-                        ██████╔╝███████║██║  ███╗
-                        ██╔══██╗██╔══██║██║   ██║
-                        ██║  ██║██║  ██║╚██████╔╝
-                        ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝
+██████╗  ██████╗  ██████╗██╗   ██╗██╗     ███████╗███╗   ██╗███████╗
+██╔══██╗██╔═══██╗██╔════╝██║   ██║██║     ██╔════╝████╗  ██║██╔════╝
+██║  ██║██║   ██║██║     ██║   ██║██║     █████╗  ██╔██╗ ██║███████╗
+██║  ██║██║   ██║██║     ██║   ██║██║     ██╔══╝  ██║╚██╗██║╚════██║
+██████╔╝╚██████╔╝╚██████╗╚██████╔╝███████╗███████╗██║ ╚████║███████║
+╚═════╝  ╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═══╝╚══════╝
 ```
 
 ### Enterprise Agentic Retrieval-Augmented Generation System
@@ -49,11 +42,6 @@ short_description: Enterprise Agentic RAG — upload PDFs and chat with AI
 > **Upload · Embed · Retrieve · Chat** — A production-grade AI document assistant built end-to-end with an agentic RAG pipeline, streaming responses, and per-user data isolation.
 
 <br/>
-## 🌟 GirlScript Summer of Code 2026
-
-This project is an official participant in **GirlScript Summer of Code 2026 (GSSoC'26)** and welcomes contributions from the community.
-
-<br/>
 
 [Features](#-key-features) · [Tech Stack](#-tech-stack) · [Getting Started](#-getting-started) · [Architecture](#-architecture) · [RAG Pipeline](#-rag-pipeline) · [API Reference](#-api-reference) · [Deployment](#-deployment) · [Contributing](#-contributing)
 
@@ -63,16 +51,16 @@ This project is an official participant in **GirlScript Summer of Code 2026 (GSS
 
 ## 🤝 Contributors
 
-Thanks to all the amazing people who have contributed to **PDF-Assistant-RAG**! 🎉
+Thanks to all the amazing people who have contributed to **DocuLens-AI**! 🎉
 
 <div align="center">
-  <a href="https://github.com/param20h/PDF-Assistant-RAG/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=param20h/PDF-Assistant-RAG" />
+  <a href="https://github.com/luisnavarro76/DocuLens-AI/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=luisnavarro76/DocuLens-AI" />
   </a>
 </div>
 <br/>
 
-> 🌟 **Want to join them?** Check out [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines and look for [good first issues](https://github.com/param20h/PDF-Assistant-RAG/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) to get started!
+> 🌟 **Want to join them?** Check out [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines and look for [good first issues](https://github.com/luisnavarro76/DocuLens-AI/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) to get started!
 
 ---
 
@@ -80,7 +68,7 @@ Thanks to all the amazing people who have contributed to **PDF-Assistant-RAG**! 
 
 ## 🌟 Overview
 
-**PDF-Assistant-RAG** is a complete, production-ready AI document assistant that lets users upload complex PDFs, financial reports, legal contracts, and research papers — then chat with an AI that provides **accurate, cited answers** powered by a multi-stage Retrieval-Augmented Generation pipeline.
+**DocuLens-AI** is a complete, production-ready AI document assistant that lets users upload complex PDFs, financial reports, legal contracts, and research papers — then chat with an AI that provides **accurate, cited answers** powered by a multi-stage Retrieval-Augmented Generation pipeline.
 
 The system uses **hybrid search (vector + BM25) with Reciprocal Rank Fusion** and **cross-encoder reranking** to find the most relevant document chunks, streams AI-generated answers token-by-token, and highlights exact source citations with page numbers — all inside a modern Next.js frontend with JWT-secured per-user data isolation.
 
@@ -164,32 +152,32 @@ node_ops_deploy -->|"runs"| node_backend_main
 node_ops_deploy -->|"runs"| node_frontend_app
 node_integrations_bot -.->|"integrates"| node_backend_routes
 
-click node_backend_main "https://github.com/param20h/pdf-assistant-rag/blob/dev/backend/app/main.py"
-click node_backend_routes "https://github.com/param20h/pdf-assistant-rag/tree/dev/backend/app/routes"
-click node_backend_auth "https://github.com/param20h/pdf-assistant-rag/blob/dev/backend/app/routes/auth.py"
-click node_backend_documents "https://github.com/param20h/pdf-assistant-rag/blob/dev/backend/app/routes/documents.py"
-click node_backend_chat "https://github.com/param20h/pdf-assistant-rag/blob/dev/backend/app/routes/chat.py"
-click node_backend_workspaces "https://github.com/param20h/pdf-assistant-rag/blob/dev/backend/app/routes/workspaces.py"
-click node_backend_graph_api "https://github.com/param20h/pdf-assistant-rag/blob/dev/backend/app/routes/graph.py"
-click node_backend_health "https://github.com/param20h/pdf-assistant-rag/blob/dev/backend/app/routes/health.py"
-click node_backend_admin "https://github.com/param20h/pdf-assistant-rag/blob/dev/backend/app/routes/admin.py"
-click node_backend_ingestion "https://github.com/param20h/pdf-assistant-rag/blob/dev/backend/app/services/document_ingestion.py"
-click node_backend_rag_retrieval "https://github.com/param20h/pdf-assistant-rag/blob/dev/backend/app/rag/retriever.py"
-click node_backend_rag_generation "https://github.com/param20h/pdf-assistant-rag/blob/dev/backend/app/rag/prompts.py"
-click node_backend_graph_rag "https://github.com/param20h/pdf-assistant-rag/blob/dev/backend/app/rag/graph_builder.py"
-click node_backend_storage_db "https://github.com/param20h/pdf-assistant-rag/blob/dev/backend/app/database.py"
-click node_backend_storage_vector "https://github.com/param20h/pdf-assistant-rag/blob/dev/backend/app/rag/vectorstore.py"
-click node_backend_storage_cache "https://github.com/param20h/pdf-assistant-rag/blob/dev/backend/app/cache.py"
-click node_backend_queue "https://github.com/param20h/pdf-assistant-rag/blob/dev/backend/app/celery_app.py"
-click node_frontend_app "https://github.com/param20h/pdf-assistant-rag/tree/dev/frontend/src/app"
-click node_frontend_chat "https://github.com/param20h/pdf-assistant-rag/tree/dev/frontend/src/components/chat"
-click node_frontend_documents "https://github.com/param20h/pdf-assistant-rag/tree/dev/frontend/src/components/document"
-click node_frontend_graph "https://github.com/param20h/pdf-assistant-rag/blob/dev/frontend/src/components/graph/KnowledgeGraph.tsx"
-click node_frontend_state "https://github.com/param20h/pdf-assistant-rag/tree/dev/frontend/src/store"
-click node_frontend_api "https://github.com/param20h/pdf-assistant-rag/blob/dev/frontend/src/lib/api.ts"
-click node_integrations_bot "https://github.com/param20h/pdf-assistant-rag/blob/dev/bots/discord/bot.py"
-click node_ops_obs "https://github.com/param20h/pdf-assistant-rag/blob/dev/backend/app/observability.py"
-click node_ops_deploy "https://github.com/param20h/pdf-assistant-rag/blob/dev/docker-compose.yml"
+click node_backend_main "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/backend/app/main.py"
+click node_backend_routes "https://github.com/luisnavarro76/DocuLens-AI/tree/dev/backend/app/routes"
+click node_backend_auth "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/backend/app/routes/auth.py"
+click node_backend_documents "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/backend/app/routes/documents.py"
+click node_backend_chat "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/backend/app/routes/chat.py"
+click node_backend_workspaces "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/backend/app/routes/workspaces.py"
+click node_backend_graph_api "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/backend/app/routes/graph.py"
+click node_backend_health "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/backend/app/routes/health.py"
+click node_backend_admin "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/backend/app/routes/admin.py"
+click node_backend_ingestion "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/backend/app/services/document_ingestion.py"
+click node_backend_rag_retrieval "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/backend/app/rag/retriever.py"
+click node_backend_rag_generation "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/backend/app/rag/prompts.py"
+click node_backend_graph_rag "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/backend/app/rag/graph_builder.py"
+click node_backend_storage_db "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/backend/app/database.py"
+click node_backend_storage_vector "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/backend/app/rag/vectorstore.py"
+click node_backend_storage_cache "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/backend/app/cache.py"
+click node_backend_queue "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/backend/app/celery_app.py"
+click node_frontend_app "https://github.com/luisnavarro76/DocuLens-AI/tree/dev/frontend/src/app"
+click node_frontend_chat "https://github.com/luisnavarro76/DocuLens-AI/tree/dev/frontend/src/components/chat"
+click node_frontend_documents "https://github.com/luisnavarro76/DocuLens-AI/tree/dev/frontend/src/components/document"
+click node_frontend_graph "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/frontend/src/components/graph/KnowledgeGraph.tsx"
+click node_frontend_state "https://github.com/luisnavarro76/DocuLens-AI/tree/dev/frontend/src/store"
+click node_frontend_api "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/frontend/src/lib/api.ts"
+click node_integrations_bot "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/bots/discord/bot.py"
+click node_ops_obs "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/backend/app/observability.py"
+click node_ops_deploy "https://github.com/luisnavarro76/DocuLens-AI/blob/dev/docker-compose.yml"
 
 classDef toneNeutral fill:#f8fafc,stroke:#334155,stroke-width:1.5px,color:#0f172a
 classDef toneBlue fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#172554
@@ -237,7 +225,7 @@ class node_integrations_bot,node_ops_obs,node_ops_deploy toneMint
 
 | | Technology | Purpose |
 |---|---|---|
-| <img src="https://skillicons.dev/icons?i=nextjs" width="30"/> | **Next.js 14** | React framework (App Router) |
+| <img src="https://skillicons.dev/icons?i=nextjs" width="30"/> | **Next.js 16** | React framework (App Router) |
 | <img src="https://skillicons.dev/icons?i=typescript" width="30"/> | **TypeScript** | Frontend language |
 | <img src="https://skillicons.dev/icons?i=tailwind" width="30"/> | **Tailwind CSS** | Utility-first styling |
 
@@ -326,7 +314,7 @@ class node_integrations_bot,node_ops_obs,node_ops_deploy toneMint
 ## 📁 Project Structure
 
 ```
-PDF-Assistant-RAG/
+DocuLens-AI/
 │
 ├── backend/
 │   ├── app/
@@ -409,8 +397,8 @@ PDF-Assistant-RAG/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/param20h/PDF-Assistant-RAG.git
-cd PDF-Assistant-RAG
+git clone https://github.com/luisnavarro76/DocuLens-AI.git
+cd DocuLens-AI
 ```
 
 ### 2. Configure Environment
@@ -684,9 +672,9 @@ git checkout -b feature/my-feature upstream/dev
 ```
 
 **Quick links:**
-- 📋 [Good First Issues](https://github.com/param20h/PDF-Assistant-RAG/issues?q=label%3A%22good+first+issue%22)
+- 📋 [Good First Issues](https://github.com/luisnavarro76/DocuLens-AI/issues?q=label%3A%22good+first+issue%22)
 - 📖 [Contributing Guide](CONTRIBUTING.md)
-- 💬 [Discussions](https://github.com/param20h/PDF-Assistant-RAG/discussions)
+- 💬 [Discussions](https://github.com/luisnavarro76/DocuLens-AI/discussions)
 
 <br/>
 

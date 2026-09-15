@@ -57,7 +57,7 @@ export default function HomePage() {
   const [hallOfFameOpen, setHallOfFameOpen] = useState(false);
   const [maintenanceVisible, setMaintenanceVisible] = useState(true);
 
-  const docsUrl = (process.env.NEXT_PUBLIC_API_URL || "https://param20h-pdf-assit-rag.hf.space") + "/docs";
+  const docsUrl = (process.env.NEXT_PUBLIC_API_URL || "https://luisnavarro76-pdf-assit-rag.hf.space") + "/docs";
 
   useEffect(() => {
     if (!loading && user) {

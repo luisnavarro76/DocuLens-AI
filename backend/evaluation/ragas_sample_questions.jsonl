@@ -1,4 +1,4 @@
-{"id":"q001","question":"What is the main purpose of PDF-Assistant-RAG?","reference":"PDF-Assistant-RAG helps users upload documents, retrieve relevant document context, and ask questions answered through a retrieval-augmented generation workflow."}
+{"id":"q001","question":"What is the main purpose of DocuLens-AI?","reference":"DocuLens-AI helps users upload documents, retrieve relevant document context, and ask questions answered through a retrieval-augmented generation workflow."}
 {"id":"q002","question":"Which backend framework serves the API?","reference":"The backend API is served by FastAPI."}
 {"id":"q003","question":"Which frontend framework is used for the application interface?","reference":"The frontend is a Next.js application."}
 {"id":"q004","question":"What does the document upload route do before saving permanent state?","reference":"The upload route validates filename, extension, size, MIME type, and parser readability before moving a file into permanent storage."}

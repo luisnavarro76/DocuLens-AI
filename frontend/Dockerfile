@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # =============================================================================
-# Multi-stage Dockerfile for the PDF-Assistant-RAG Next.js frontend.
+# Multi-stage Dockerfile for the DocuLens-AI Next.js frontend.
 #
 # next.config.ts uses output: "export" which generates a fully static site
 # under /out — no Node.js runtime is needed at serve time. The final image

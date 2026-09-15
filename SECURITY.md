@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Currently, the following branches and versions of PDF-Assistant-RAG are supported with security updates.
+Currently, the following branches and versions of DocuLens-AI are supported with security updates.
 
 | Version | Supported          |
 | ------- | ------------------ |

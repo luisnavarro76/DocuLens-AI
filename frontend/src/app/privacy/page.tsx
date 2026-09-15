@@ -5,11 +5,11 @@ import { ArrowLeft, Shield, Brain, FileText, Database, Cookie, UserCheck, Mail }
 export const metadata: Metadata = {
   title: "Privacy Policy — Document AI Analyst",
   description:
-    "How PDF-Assistant-RAG collects, uses, and protects your data. Learn about our privacy practices for document uploads, AI processing, and account information.",
+    "How DocuLens-AI collects, uses, and protects your data. Learn about our privacy practices for document uploads, AI processing, and account information.",
   openGraph: {
     title: "Privacy Policy — Document AI Analyst",
     description:
-      "How PDF-Assistant-RAG collects, uses, and protects your data.",
+      "How DocuLens-AI collects, uses, and protects your data.",
   },
 };
 
@@ -21,7 +21,7 @@ const sections = [
     content: (
       <>
         <p>
-          When you use PDF-Assistant-RAG, we collect the following categories of information
+          When you use DocuLens-AI, we collect the following categories of information
           to provide and improve our service:
         </p>
         <h3>Account Information</h3>
@@ -183,7 +183,7 @@ const sections = [
     content: (
       <>
         <p>
-          PDF-Assistant-RAG integrates with the following third-party services to deliver its
+          DocuLens-AI integrates with the following third-party services to deliver its
           functionality:
         </p>
         <ul>
@@ -313,31 +313,31 @@ const sections = [
           <li>
             <strong>GitHub Issues:</strong>{" "}
             <a
-              href="https://github.com/param20h/PDF-Assistant-RAG/issues"
+              href="https://github.com/luisnavarro76/DocuLens-AI/issues"
               target="_blank"
               rel="noopener noreferrer"
             >
-              github.com/param20h/PDF-Assistant-RAG/issues
+              github.com/luisnavarro76/DocuLens-AI/issues
             </a>
           </li>
           <li>
             <strong>GitHub Discussions:</strong>{" "}
             <a
-              href="https://github.com/param20h/PDF-Assistant-RAG/discussions"
+              href="https://github.com/luisnavarro76/DocuLens-AI/discussions"
               target="_blank"
               rel="noopener noreferrer"
             >
-              github.com/param20h/PDF-Assistant-RAG/discussions
+              github.com/luisnavarro76/DocuLens-AI/discussions
             </a>
           </li>
           <li>
             <strong>LinkedIn:</strong>{" "}
             <a
-              href="https://www.linkedin.com/in/param20h/"
+              href="https://www.linkedin.com/in/luisnavarro76/"
               target="_blank"
               rel="noopener noreferrer"
             >
-              linkedin.com/in/param20h
+              linkedin.com/in/luisnavarro76
             </a>
           </li>
         </ul>
@@ -379,7 +379,7 @@ export default function PrivacyPage() {
             Privacy Policy
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            How we collect, use, and protect your data when you use PDF-Assistant-RAG.
+            How we collect, use, and protect your data when you use DocuLens-AI.
           </p>
           <p className="mt-4 text-sm text-muted-foreground">
             <em>Last updated: May 30, 2026</em>
@@ -430,7 +430,7 @@ export default function PrivacyPage() {
           <p className="text-sm text-muted-foreground">
             Have questions?{" "}
             <a
-              href="https://github.com/param20h/PDF-Assistant-RAG/discussions"
+              href="https://github.com/luisnavarro76/DocuLens-AI/discussions"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline"

@@ -1,7 +1,7 @@
 # Database Schema
 
 This guide documents the backend relational schema used by
-PDF-Assistant-RAG. The current implementation is defined with SQLAlchemy ORM
+DocuLens-AI. The current implementation is defined with SQLAlchemy ORM
 models in `backend/app/models.py` and is initialized through
 `backend/app/database.py`.
 

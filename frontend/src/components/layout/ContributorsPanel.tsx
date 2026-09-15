@@ -24,7 +24,7 @@ export default function ContributorsPanel({ onClose }: { onClose: () => void }) 
   const [stats, setStats] = useState<RepoStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const REPO = "param20h/PDF-Assistant-RAG";
+  const REPO = "luisnavarro76/DocuLens-AI";
 
   useEffect(() => {
     api.get<{ contributors: Contributor[], stats: RepoStats }>("/api/v1/github/stats")
